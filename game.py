@@ -52,10 +52,29 @@ class Game:
       opponentClaims = self.playerClaims[(self.currentPlayer + 1)%2]
       currentPlayerClaims = self.playerClaims[self.currentPlayer]
       currentPlayerCards = self.playerCards[self.currentPlayer]
-      claim, cards = self.currentPlayer.getAction()
-    print(self.getWinner())
+      claim, cards = self.currentPlayer.getAction(currentPlayerCards, opponentClaims, currentPlayerClaims)
+      if claim == "Bluff":
+        opponentBluffed = didOpponentBluff(opponentClaims[-1])
+        if opponentBluffed:
+          print("player {} was caught bluffing".format((self.currentPlayer + 1)%2))
+          self.playerClaims = [[],[]]
+          self.playerCards[(self.currentPlayer+1)%2].extend(self.deck) #bluffing player gets deck
+          self.currentPlayer = (self.currentPlayer+1)%2 #the new player is the opponent
+        else:
+          print("player {} incorrectly called bluff".format(self.currentPlayer))
+          self.playerClaims = [[],[]]
+          self.playerCards[self.currentPlayer].extend(self.deck)
+          
+      else:
+        currentPlayerClaims.append(claim)
+        self.deck.extend(cards)
+    print("player {} won".format(self.getWinner()))
 
+  def gameEnded(self):
+    return len(self.playerCards[0]) == 0 or len(self.playerCards[1]) == 0
 
+  def didOpponentBluff(opponentClaim):
+    return opponentClaim == self.deck[-len(opponentClaim):]
 
 game = Game()
 print(game.protagonistCards)
