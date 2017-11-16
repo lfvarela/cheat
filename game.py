@@ -19,14 +19,14 @@ class Agent:
     raiseNotDefined()
 
 class Protagonist(Agent):
-  def getAction(self, currentCards, opponentClaims, currentClaims):
+  def getAction(self, currentCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
       randomIndex= self.uniformDraw(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
-    if np.random.rand() < .1: #Call bluff 10% of the time
+    if np.random.rand() < .1 or numOpponentCards == 0: #Call bluff 10% of the time
       return "Bluff", None
     claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
     if cards != None:
@@ -39,6 +39,7 @@ class Protagonist(Agent):
     return claim, cards
 
   def tellTruth(self, currentCards, lastRank):
+    largestPossibleHand = None
     for i in [-1,0,1]:
       index = (lastRank + i) % len(currentCards)
       if currentCards[index] > 0:
@@ -51,14 +52,14 @@ class Protagonist(Agent):
     return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
 
 class Contender(Agent):
-  def getAction(self, currentCards, opponentClaims, currentClaims):
+  def getAction(self, currentCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
       randomIndex= self.uniformDraw(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
-    if np.random.rand() < .1: #Call bluff 10% of the time
+    if np.random.rand() < .1 or numOpponentCards == 0: #Call bluff 10% of the time or when the opponent has no cards.
       return "Bluff", None
     claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
     if cards != None:
@@ -102,11 +103,13 @@ class Game:
 
   def run(self):
     while not self.gameEnded():
-      print("check: {}".format(sum(self.playerCards[0]) + sum(self.playerCards[1]) + sum(self.deck)))
+      print("It is player {} turn".format(self.currentPlayer))
       opponentClaims = self.playerClaims[self.opponentOf(self.currentPlayer)]
       currentPlayerClaims = self.playerClaims[self.currentPlayer]
       currentPlayerCards = self.playerCards[self.currentPlayer]
-      claim, cardsPlayed = self.players[self.currentPlayer].getAction(currentPlayerCards, opponentClaims, currentPlayerClaims)
+      claim, cardsPlayed = self.players[self.currentPlayer].getAction(currentPlayerCards, opponentClaims, currentPlayerClaims, sum(self.playerCards[self.opponentOf(self.currentPlayer)]))
+      print("claim: {}".format(claim))
+      print("cardsPlayed: {}".format(cardsPlayed))
       if claim == "Bluff":
         opponentBluffed = self.didOpponentBluff(opponentClaims[-1], self.cardsLastPlayed)
         if opponentBluffed:
@@ -120,15 +123,19 @@ class Game:
       else:
         self.putDownCards(claim, cardsPlayed)
         self.currentPlayer = self.opponentOf(self.currentPlayer)
-    print("player {} won".format(self.getWinner()))
+      print("")
+      print("")
+    #print("player {} won".format(self.getWinner()))
+    return self.getWinner()
 
   def getWinner(self):
     if sum(self.playerCards[0]) == 0:
       return 0
     return 1
 
+  #weird bug.
   def gameEnded(self):
-    return sum(self.playerCards[0]) == 0 or sum(self.playerCards[1]) == 0
+    return sum(self.playerCards[self.currentPlayer]) == 0
 
   def didOpponentBluff(self, opponentClaim, cardsLastPlayed):
     cardIndex = opponentClaim[0]
@@ -171,4 +178,13 @@ class Game:
     self.moveStacks(target, source, source)
 
 game = Game()
-game.run()
+winners.append(game.run())
+
+'''
+winners = []
+for _ in range(100):
+  game = Game()
+  winners.append(game.run())
+print("player 0 won: {}".format( float(len(winners) - sum(winners)) / len(winners) ))
+print("player 1 won: {}".format( float(sum(winners)) / len(winners) ))
+'''
