@@ -40,10 +40,17 @@ class Protagonist(Agent):
 
   def tellTruth(self, currentCards, lastRank):
     largestPossibleHand = None
+    indexLargestPossibleHand = None
+    sizeOfLargestPossibleHand = 0
     for i in [-1,0,1]:
       index = (lastRank + i) % len(currentCards)
-      if currentCards[index] > 0:
-        return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
+      if currentCards[index] > sizeOfLargestPossibleHand:
+        largestPossibleHand = [currentCards[index] if i == index else 0 for i in range(len(currentCards))]
+        indexLargestPossibleHand = index
+        sizeOfLargestPossibleHand = currentCards[index]
+    if largestPossibleHand != None and indexLargestPossibleHand != None:
+      return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
+        #return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
     return None, None
 
   #Returns index of a random card drawn from currentCards
@@ -177,14 +184,14 @@ class Game:
   def transferStacks(self, target, source):
     self.moveStacks(target, source, source)
 
-game = Game()
-winners.append(game.run())
+#game = Game()
+#print("player {} won".format(game.run()))
 
-'''
+
 winners = []
 for _ in range(100):
   game = Game()
   winners.append(game.run())
 print("player 0 won: {}".format( float(len(winners) - sum(winners)) / len(winners) ))
 print("player 1 won: {}".format( float(sum(winners)) / len(winners) ))
-'''
+
