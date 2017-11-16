@@ -35,6 +35,7 @@ class Protagonist(Agent):
     randomIndex= self.uniformDraw(currentCards)
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
+    print("player {} is bluffing".format(0))
     return claim, cards
 
   def tellTruth(self, currentCards, lastRank):
@@ -66,6 +67,7 @@ class Contender(Agent):
     randomIndex= self.uniformDraw(currentCards)
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
+    print("player {} is bluffing".format(1))
     return claim, cards
 
   def tellTruth(self, currentCards, lastRank):
@@ -100,6 +102,7 @@ class Game:
 
   def run(self):
     while not self.gameEnded():
+      print("check: {}".format(sum(self.playerCards[0]) + sum(self.playerCards[1]) + sum(self.deck)))
       opponentClaims = self.playerClaims[self.opponentOf(self.currentPlayer)]
       currentPlayerClaims = self.playerClaims[self.currentPlayer]
       currentPlayerCards = self.playerCards[self.currentPlayer]
@@ -111,6 +114,7 @@ class Game:
           self.penalise(self.opponentOf(self.currentPlayer))
           self.reset(self.opponentOf(self.currentPlayer))
         else:
+          print("player {} called bluff incorrectly".format(self.currentPlayer))
           self.penalise(self.currentPlayer)
           self.reset(self.currentPlayer)
       else:
@@ -128,7 +132,7 @@ class Game:
 
   def didOpponentBluff(self, opponentClaim, cardsLastPlayed):
     cardIndex = opponentClaim[0]
-    return opponentClaim[1] == cardsLastPlayed[cardIndex]
+    return opponentClaim[1] != cardsLastPlayed[cardIndex]
 
   def opponentOf(self, player):
     return (player + 1)%2
