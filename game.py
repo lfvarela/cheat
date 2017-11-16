@@ -1,5 +1,7 @@
 import random
 import numpy as np
+import copy
+import util
 
 class Agent:
   """
@@ -19,14 +21,15 @@ class Agent:
     raiseNotDefined()
 
 class Protagonist(Agent):
-  def getAction(self, currentCards, opponentClaims, currentClaims, numOpponentCards):
+  def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
       randomIndex= self.uniformDraw(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
-    if np.random.rand() < .1 or numOpponentCards == 0: #Call bluff 10% of the time
+    #np.random.rand() < .1
+    if self.opponentBluffing(opponentClaims[-1], currentCards, putDownCards) or numOpponentCards == 0:
       return "Bluff", None
     claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
     if cards != None:
@@ -38,17 +41,24 @@ class Protagonist(Agent):
     print("player {} is bluffing".format(0))
     return claim, cards
 
+  #Assumes opponent is telling the truth most of the time. Finish this!
+  def opponentBluffing(opponentClaim, currentCards, putDownCards):
+    truth = copy.copy(currentCards)
+    for putDown in putDownCards:
+      util.addStacks(truth, putDown)
+
+
   def tellTruth(self, currentCards, lastRank):
     largestPossibleHand = None
     indexLargestPossibleHand = None
     sizeOfLargestPossibleHand = 0
-    for i in [-1,0,1]:
+    for i in np.random.permutation([-1,0,1]):
       index = (lastRank + i) % len(currentCards)
       if currentCards[index] > sizeOfLargestPossibleHand:
         largestPossibleHand = [currentCards[index] if i == index else 0 for i in range(len(currentCards))]
         indexLargestPossibleHand = index
         sizeOfLargestPossibleHand = currentCards[index]
-    if largestPossibleHand != None and indexLargestPossibleHand != None:
+    if sizeOfLargestPossibleHand > 0 and largestPossibleHand != None and indexLargestPossibleHand != None:
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
         #return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
     return None, None
@@ -58,8 +68,8 @@ class Protagonist(Agent):
     s = float(sum(currentCards))
     return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
 
-class Contender(Agent):
-  def getAction(self, currentCards, opponentClaims, currentClaims, numOpponentCards):
+class DumbestContender(Agent):
+  def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
       randomIndex= self.uniformDraw(currentCards)
@@ -79,7 +89,7 @@ class Contender(Agent):
     return claim, cards
 
   def tellTruth(self, currentCards, lastRank):
-    for i in [-1,0,1]:
+    for i in np.random.permutation([-1,0,1]):
       index = (lastRank + i) % len(currentCards)
       if currentCards[index] > 0:
         return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
@@ -91,12 +101,13 @@ class Contender(Agent):
     return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
 
 class Game:
-  def __init__(self):
-    self.players= [Protagonist(), Contender()]
+  def __init__(self, protagonist, contender):
+    self.players= [protagonist, contender]
     protagonistCards = [0] * 13
     contenderCards = [0] * 13
     self.playerCards = [protagonistCards,contenderCards]
     self.playerClaims = [[],[]]
+    self.playerPutDownCards = [[],[]]
     initialCards = []
     for _ in range(4):
       for i in range(0,13):
@@ -113,8 +124,9 @@ class Game:
       print("It is player {} turn".format(self.currentPlayer))
       opponentClaims = self.playerClaims[self.opponentOf(self.currentPlayer)]
       currentPlayerClaims = self.playerClaims[self.currentPlayer]
+      currentPlayerPutDownCards = self.playerPutDownCards[self.currentPlayer]
       currentPlayerCards = self.playerCards[self.currentPlayer]
-      claim, cardsPlayed = self.players[self.currentPlayer].getAction(currentPlayerCards, opponentClaims, currentPlayerClaims, sum(self.playerCards[self.opponentOf(self.currentPlayer)]))
+      claim, cardsPlayed = self.players[self.currentPlayer].getAction(currentPlayerCards, currentPlayerPutDownCards, opponentClaims, currentPlayerClaims, sum(self.playerCards[self.opponentOf(self.currentPlayer)]))
       print("claim: {}".format(claim))
       print("cardsPlayed: {}".format(cardsPlayed))
       if claim == "Bluff":
@@ -129,6 +141,7 @@ class Game:
           self.reset(self.currentPlayer)
       else:
         self.putDownCards(claim, cardsPlayed)
+        self.playerPutDownCards[self.currentPlayer].append(cardsPlayed)
         self.currentPlayer = self.opponentOf(self.currentPlayer)
       print("")
       print("")
@@ -152,10 +165,11 @@ class Game:
     return (player + 1)%2
 
   def penalise(self, player):
-    self.transferStacks(self.playerCards[player], self.deck)
+    util.transferStacks(self.playerCards[player], self.deck)
 
   def reset(self, nextPlayer):
     self.playerClaims = [[],[]]
+    self.playerPutDownCards = [[],[]]
     self.cardsLastPlayed = None
     self.currentPlayer = nextPlayer
 
@@ -171,26 +185,13 @@ class Game:
   #Update last card played
   #Update claims
   def putDownCards(self, claim, cardsPlayed):
-    self.moveStacks(self.deck, self.playerCards[self.currentPlayer], cardsPlayed)
+    util.moveStacks(self.deck, self.playerCards[self.currentPlayer], cardsPlayed)
     self.cardsLastPlayed = cardsPlayed
     self.playerClaims[self.currentPlayer].append(claim)
 
-  #We're gonna move cards from source to target
-  def moveStacks(self, target, source, cards):
-    for i in range(len(target)):
-      target[i] += cards[i]
-      source[i] -= cards[i]
-
-  def transferStacks(self, target, source):
-    self.moveStacks(target, source, source)
-
-#game = Game()
-#print("player {} won".format(game.run()))
-
-
 winners = []
 for _ in range(100):
-  game = Game()
+  game = Game(Protagonist(), DumbestContender())
   winners.append(game.run())
 print("player 0 won: {}".format( float(len(winners) - sum(winners)) / len(winners) ))
 print("player 1 won: {}".format( float(sum(winners)) / len(winners) ))
