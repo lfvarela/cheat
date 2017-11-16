@@ -42,11 +42,15 @@ class Protagonist(Agent):
     return claim, cards
 
   #Assumes opponent is telling the truth most of the time. Finish this!
-  def opponentBluffing(opponentClaim, currentCards, putDownCards):
+  def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
     truth = copy.copy(currentCards)
     for putDown in putDownCards:
       util.addStacks(truth, putDown)
-
+    util.addStacks(truth, util.claim2Cards(opponentClaim))
+    for count in truth:
+      if count > 4:
+        return True
+    return False
 
   def tellTruth(self, currentCards, lastRank):
     largestPossibleHand = None
@@ -121,6 +125,7 @@ class Game:
 
   def run(self):
     while not self.gameEnded():
+      print("check: {}".format(sum(self.deck) + sum(self.playerCards[self.currentPlayer]) + sum(self.playerCards[self.opponentOf(self.currentPlayer)])))
       print("It is player {} turn".format(self.currentPlayer))
       opponentClaims = self.playerClaims[self.opponentOf(self.currentPlayer)]
       currentPlayerClaims = self.playerClaims[self.currentPlayer]
@@ -189,10 +194,12 @@ class Game:
     self.cardsLastPlayed = cardsPlayed
     self.playerClaims[self.currentPlayer].append(claim)
 
+
+#game = Game(Protagonist(), DumbestContender())
+#print("player {} won".format(game.run()))
 winners = []
 for _ in range(100):
   game = Game(Protagonist(), DumbestContender())
   winners.append(game.run())
 print("player 0 won: {}".format( float(len(winners) - sum(winners)) / len(winners) ))
 print("player 1 won: {}".format( float(sum(winners)) / len(winners) ))
-

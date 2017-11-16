@@ -19,3 +19,8 @@ def moveStacks(target, source, cards):
 def transferStacks(target, source):
   moveStacks(target, source, source)
 
+#Takes a claim and returns its equivalent "hand" representation.
+def claim2Cards(claim):
+  return [claim[1] if i == claim[0] else 0 for i in range(13)]
+
+
