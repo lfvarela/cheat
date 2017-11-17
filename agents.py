@@ -66,6 +66,52 @@ class Protagonist(Agent):
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
     return None, None
 
+class DirectionalStartDeterministicAccusation(Agent):
+  def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
+    if len(opponentClaims) == 0:
+      #Play one card and tell the truth
+      randomIndex= util.drawFavoringCloseCards(currentCards)
+      cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+      claim = (randomIndex, 1)
+      return claim, cards
+    #np.random.rand() < .1
+    if self.opponentBluffing(opponentClaims[-1], currentCards, putDownCards) or numOpponentCards == 0:
+      return "Bluff", None
+    claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
+    if cards != None:
+      return claim, cards
+    #Must lie. Draw one card, favouring cards that are far away from last rank.
+    randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
+    cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+    claim = (opponentClaims[-1][0], 1)
+    print("player {} is bluffing".format(0))
+    return claim, cards
+
+  #Assumes opponent is telling the truth most of the time. Finish this!
+  def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
+    truth = copy.copy(currentCards)
+    for putDown in putDownCards:
+      util.addStacks(truth, putDown)
+    util.addStacks(truth, util.claim2Cards(opponentClaim))
+    for count in truth:
+      if count > 4:
+        return True
+    return False
+
+  def tellTruth(self, currentCards, lastRank):
+    largestPossibleHand = None
+    indexLargestPossibleHand = None
+    sizeOfLargestPossibleHand = 0
+    for i in np.random.permutation([-1,0,1]):
+      index = (lastRank + i) % len(currentCards)
+      if currentCards[index] > sizeOfLargestPossibleHand:
+        largestPossibleHand = [currentCards[index] if i == index else 0 for i in range(len(currentCards))]
+        indexLargestPossibleHand = index
+        sizeOfLargestPossibleHand = currentCards[index]
+    if sizeOfLargestPossibleHand > 0 and largestPossibleHand != None and indexLargestPossibleHand != None:
+      return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
+    return None, None
+
 class DirectionalBluffDeterministicBluffAccusation(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
