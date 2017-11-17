@@ -13,28 +13,53 @@ class Agent:
     self.index = index
 
   def getAction(self, state):
-    """
-    The Agent will receive a GameState (from either {pacman, capture, sonar}.py) and
-    must return an action from Directions.{North, South, East, West, Stop}
-    """
     raiseNotDefined()
 
 class Protagonist(Agent):
+
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if np.random.rand() < .1 or numOpponentCards == 0:
       return "Bluff", None
     currentState = State(currentCards, putDownCards, opponentClaims[-1][0], numOpponentCards)
     #action has to be (claim, handPlayed)
-    actions = self.getPossibleActions(currentCards, opponentClaims[-1][0])
-    bestAction = None:
-    bestScore = -float('inf')
-    #TODO: Luis condense
-    for action in actions:
-      score = self.getExpectedScore(currentState, action)
-      if score > bestScore:
-        bestAction = action
-        bestScore = score
-    return action
+    possibleActions = self.getPossibleActions(currentCards, opponentClaims[-1][0])
+
+    # epsilon-greedy exploration
+    explorationProb = 0.1
+    if random.random() < explorationProb:
+        return random.choice(actions)
+    else:
+        return max((self.getExpectedScore(currentState, action), action) for action in possibleActions)[1]
+
+'''
+  def getPossibleActions(self, currentCards, currentRank):
+      truthful = False
+      possibleActions = []
+      for dx in [-1,0,1]:
+        newRank = (currentRank + dx) % len(currentCards)
+        if currentCards[newRank] > 0:
+          truthful = True
+          cardsPutDown = util.buildPutDownCardsOfOne(newRank, len(currentCards))
+          claim = (newRank, 1)
+          possibleActions.append((cardsPutDown, claim))
+      if not truthful:
+          newRank = util.drawFavoringFarCards(currentCards, lastRank)
+          cardsPutDown = util.buildPutDownCardsOfOne(newRank, len(currentCards))
+          claim = (newRank, 1)
+          possibleActions.append((cardsPutDown, claim))
+      return possibleActions
+'''
+
+  def getPossibleActions(self, currentCards, currentRank):
+    possibleActions = []
+    for rank, numCards in enumerate(currentCards):
+      if numCards > 0:
+        for dx in [-1,0,1]:
+          claimRank = (rank + dx) % len(currentCards)
+          cardsPutDown = util.buildPutDownCardsOfOne(rank, len(currentCards))
+          claim = (claimRank, 1)
+          possibleActions.append((claim, cardsPutDown))
+    return possibleActions
 
   #Assumes opponent is telling the truth most of the time. Finish this!
   def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
@@ -60,6 +85,7 @@ class Protagonist(Agent):
     if sizeOfLargestPossibleHand > 0 and largestPossibleHand != None and indexLargestPossibleHand != None:
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
     return None, None
+
 
 class DirectionalStartDeterministicAccusation(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
@@ -122,7 +148,7 @@ class DirectionalBluffDeterministicBluffAccusation(Agent):
       return claim, cards
     #Must lie. Draw one card, favouring cards that are far away from last rank.
     randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
-    cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+    cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(0))
     return claim, cards
@@ -158,7 +184,7 @@ class SheddingContenderWithDeterministicBluffAccusation(Agent):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
       randomIndex= util.uniformDraw(currentCards)
-      cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+      cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
       claim = (randomIndex, 1)
       return claim, cards
     #np.random.rand() < .1
@@ -169,7 +195,7 @@ class SheddingContenderWithDeterministicBluffAccusation(Agent):
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
     randomIndex= util.uniformDraw(currentCards)
-    cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+    cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(0))
     return claim, cards
@@ -205,7 +231,7 @@ class SheddingContender(Agent):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
       randomIndex= util.uniformDraw(currentCards)
-      cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+      cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
       claim = (randomIndex, 1)
       return claim, cards
     if np.random.rand() < .1 or numOpponentCards == 0: #Call bluff 10% of the time or when the opponent has no cards.
@@ -215,7 +241,7 @@ class SheddingContender(Agent):
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
     randomIndex= util.uniformDraw(currentCards)
-    cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+    cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(1))
     return claim, cards
@@ -239,7 +265,7 @@ class DumbestContender(Agent):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
       randomIndex= util.uniformDraw(currentCards)
-      cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+      cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
       claim = (randomIndex, 1)
       return claim, cards
     if np.random.rand() < .1 or numOpponentCards == 0: #Call bluff 10% of the time or when the opponent has no cards.
@@ -249,7 +275,7 @@ class DumbestContender(Agent):
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
     randomIndex= util.uniformDraw(currentCards)
-    cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+    cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(1))
     return claim, cards
@@ -258,5 +284,5 @@ class DumbestContender(Agent):
     for i in np.random.permutation([-1,0,1]):
       index = (lastRank + i) % len(currentCards)
       if currentCards[index] > 0:
-        return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
+        return (index, 1), util.buildPutDownCardsOfOne(index, len(currentCards))
     return None, None

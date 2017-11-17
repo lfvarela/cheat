@@ -59,6 +59,7 @@ def drawFavoringCloseCards(currentCards):
 #
 # states is a 29 element list (0 - 12: reformatted radial counts of agent cards, 13 - 25: cards played standard format, 26: last rank played, 27: number of opponent cards, 28: offset coefficient)
 # Update rule: https://www.dropbox.com/s/2ywl9jw7aujj0ss/Screenshot%202017-11-16%2022.05.01.png?dl=0
+# CS 229 lecture notes: http://cs229.stanford.edu/notes/cs229-notes1.pdf
 def logistic_regression(theta, states, result, alpha=0.001):
   for state in states:
     for j in range(len(theta)):
@@ -84,6 +85,9 @@ def getState(currentCards, cardsPutDown, lastRank, numOpponentCards):
   stateVector.append(numOpponentCards)
   stateVector.append(1)
   return stateVector
+
+def buildPutDownCardsOfOne(index, handLen):
+    return [1 if i == index else 0 for i in range(handLen))]
 
 '''
 currentCards = [1, 3, 2, 4, 0, 0, 4, 2, 1, 1, 0, 2, 2]
