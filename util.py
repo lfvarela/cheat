@@ -39,7 +39,6 @@ def drawFavoringFarCards(currentCards, lastRank):
   return uniformDraw(probs)
 
 def drawFavoringCloseCards(currentCards):
-  print(currentCards) #currentCards has some negative elements
   probs = [0] * 13
   for i, count in enumerate(currentCards):
     if count > 0:
@@ -51,6 +50,9 @@ def drawFavoringCloseCards(currentCards):
       probs[i] = weight
   return uniformDraw(probs)
 
+# states is a 29 element list (0 - 12: reformatted radial counts of agent cards, 13 - 25: cards played standard format, 26: last rank played, 27: number of opponent cards, 28: offset coefficient)
+# Update rule: https://www.dropbox.com/s/2ywl9jw7aujj0ss/Screenshot%202017-11-16%2022.05.01.png?dl=0
+
 def logistic_regression(self, states, alpha=0.1):
 	for j in range(len(self.theta)):
     self.theta[j] += alpha*(self.result - h(state))*state[j]
@@ -61,3 +63,22 @@ def h(self, states):
 
 def sigmoid(z):
   return 1.0/float(1 + exp(-z))
+
+def getState(currentCards, cardsPutDown, lastRank, numOpponentCards):
+  distanceVector = [0]*len(currentCards)
+  middleIndex = 6
+  distanceVector[middleIndex] = currentCards[lastRank]
+  for distance in range(1,7):
+    distanceVector[middleIndex - distance] = currentCards[(lastRank-distance)%len(currentCards)]
+    distanceVector[middleIndex + distance] = currentCards[(lastRank+distance)%len(currentCards)]
+  distanceVector.extend(cardsPutDown)
+  distanceVector.append(lastRank)
+  distanceVector.append(numOpponentCards)
+  distanceVecotr.append(1) #the last term is the bias term
+  return distanceVector
+
+currentCards = [1, 3, 2, 4, 0, 0, 4, 2, 1, 1, 0, 2, 2]
+cardsPutDown = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+lastRank = 9
+numOpponentCards = 3
+print(getState(currentCards, cardsPutDown, lastRank, numOpponentCards))
