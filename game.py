@@ -25,8 +25,16 @@ class Game:
 
   def run(self):
     while not self.gameEnded():
-      print("check: {}".format(sum(self.deck) + sum(self.playerCards[self.currentPlayer]) + sum(self.playerCards[self.opponentOf(self.currentPlayer)])))
       print("It is player {} turn".format(self.currentPlayer))
+      if not all(i >= 0 for i in self.playerCards[self.currentPlayer]):
+        print("Player cards has negative counts: {}".format(self.playerCards[self.currentPlayer]))
+        break
+      if sum(self.deck) + sum(self.playerCards[self.currentPlayer]) + sum(self.playerCards[self.opponentOf(self.currentPlayer)]) != 52:
+        print("Does not sum to 52")
+        break
+      if not all(i >= 0 for i in self.deck):
+        print("Deck has negative counts")
+        break
       opponentClaims = self.playerClaims[self.opponentOf(self.currentPlayer)]
       currentPlayerClaims = self.playerClaims[self.currentPlayer]
       currentPlayerPutDownCards = self.playerPutDownCards[self.currentPlayer]
@@ -50,7 +58,6 @@ class Game:
         self.currentPlayer = self.opponentOf(self.currentPlayer)
       print("")
       print("")
-    #print("player {} won".format(self.getWinner()))
     return self.getWinner()
 
   def getWinner(self):
@@ -58,7 +65,6 @@ class Game:
       return 0
     return 1
 
-  #weird bug.
   def gameEnded(self):
     return sum(self.playerCards[self.currentPlayer]) == 0
 
@@ -94,12 +100,14 @@ class Game:
     self.cardsLastPlayed = cardsPlayed
     self.playerClaims[self.currentPlayer].append(claim)
 
-
 #game = Game(Protagonist(), DumbestContender())
 #print("player {} won".format(game.run()))
 winners = []
-for _ in range(100):
-  game = Game(agents.Protagonist(), agents.SheddingContenderWithDeterministicBluffAccusation())
+for _ in range(1000):
+  game = Game(agents.Protagonist(), agents.DirectionalBluffDeterministicBluffAccusation())
   winners.append(game.run())
 print("player 0 won: {}".format( float(len(winners) - sum(winners)) / len(winners) ))
 print("player 1 won: {}".format( float(sum(winners)) / len(winners) ))
+
+#test = [5, 7, 3, 0, 0, 0, 1, 2, 3, 10, 1, 1, 5]
+#print(util.drawFavoringCloseCards(test))

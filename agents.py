@@ -24,7 +24,7 @@ class Protagonist(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
-      randomIndex= self.uniformDraw(currentCards)
+      randomIndex= util.drawFavoringCloseCards(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
@@ -35,7 +35,7 @@ class Protagonist(Agent):
     if cards != None:
       return claim, cards
     #Must lie. Draw one card, favouring cards that are far away from last rank.
-    randomIndex= self.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
+    randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(0))
@@ -64,40 +64,23 @@ class Protagonist(Agent):
         sizeOfLargestPossibleHand = currentCards[index]
     if sizeOfLargestPossibleHand > 0 and largestPossibleHand != None and indexLargestPossibleHand != None:
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
-        #return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
     return None, None
 
-  #Returns index of a random card drawn from currentCards
-  def drawFavoringFarCards(self, currentCards, lastRank):
-    probs = [0] * 13
-    for i, x in enumerate(currentCards):
-      if x > 0:
-        #gets smallest distance from lastRank to i (including wrap around)
-        probs[i] = min(abs(lastRank - i), 13 - lastRank + i)
-    s = float(sum(probs))
-    return np.random.choice(len(probs), 1, p=[x/s for x in probs])[0]
-
-  #Returns index of a random card drawn from currentCards
-  def uniformDraw(self, currentCards):
-    s = float(sum(currentCards))
-    return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
-
-class DirectionalStartDeterministicBluffAccusation(Agent):
+class DirectionalBluffDeterministicBluffAccusation(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
-      randomIndex= self.uniformDraw(currentCards)
+      randomIndex= util.uniformDraw(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
-    #np.random.rand() < .1
     if self.opponentBluffing(opponentClaims[-1], currentCards, putDownCards) or numOpponentCards == 0:
       return "Bluff", None
     claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
     if cards != None:
       return claim, cards
     #Must lie. Draw one card, favouring cards that are far away from last rank.
-    randomIndex= self.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
+    randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(0))
@@ -128,27 +111,12 @@ class DirectionalStartDeterministicBluffAccusation(Agent):
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
         #return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
     return None, None
-
-  #Returns index of a random card drawn from currentCards
-  def drawFavoringFarCards(self, currentCards, lastRank):
-    probs = [0] * 13
-    for i, x in enumerate(currentCards):
-      if x > 0:
-        #gets smallest distance from lastRank to i (including wrap around)
-        probs[i] = min(abs(lastRank - i), 13 - lastRank + i)
-    s = float(sum(probs))
-    return np.random.choice(len(probs), 1, p=[x/s for x in probs])[0]
-
-  #Returns index of a random card drawn from currentCards
-  def uniformDraw(self, currentCards):
-    s = float(sum(currentCards))
-    return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
 
 class SheddingContenderWithDeterministicBluffAccusation(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
-      randomIndex= self.uniformDraw(currentCards)
+      randomIndex= util.uniformDraw(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
@@ -159,7 +127,7 @@ class SheddingContenderWithDeterministicBluffAccusation(Agent):
     if cards != None:
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
-    randomIndex= self.uniformDraw(currentCards)
+    randomIndex= util.uniformDraw(currentCards)
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(0))
@@ -191,16 +159,11 @@ class SheddingContenderWithDeterministicBluffAccusation(Agent):
         #return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
     return None, None
 
-  #Returns index of a random card drawn from currentCards
-  def uniformDraw(self, currentCards):
-    s = float(sum(currentCards))
-    return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
-
 class SheddingContender(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
-      randomIndex= self.uniformDraw(currentCards)
+      randomIndex= util.uniformDraw(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
@@ -210,7 +173,7 @@ class SheddingContender(Agent):
     if cards != None:
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
-    randomIndex= self.uniformDraw(currentCards)
+    randomIndex= util.uniformDraw(currentCards)
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(1))
@@ -229,17 +192,12 @@ class SheddingContender(Agent):
     if sizeOfLargestPossibleHand > 0 and largestPossibleHand != None and indexLargestPossibleHand != None:
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
     return None, None
-    
-  #Returns index of a random card drawn from currentCards
-  def uniformDraw(self, currentCards):
-    s = float(sum(currentCards))
-    return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
 
 class DumbestContender(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if len(opponentClaims) == 0:
       #Play one card and tell the truth
-      randomIndex= self.uniformDraw(currentCards)
+      randomIndex= util.uniformDraw(currentCards)
       cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
@@ -249,7 +207,7 @@ class DumbestContender(Agent):
     if cards != None:
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
-    randomIndex= self.uniformDraw(currentCards)
+    randomIndex= util.uniformDraw(currentCards)
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
     print("player {} is bluffing".format(1))
@@ -261,9 +219,3 @@ class DumbestContender(Agent):
       if currentCards[index] > 0:
         return (index, 1), [1 if i == index else 0 for i in range(len(currentCards))]
     return None, None
-    
-  #Returns index of a random card drawn from currentCards
-  def uniformDraw(self, currentCards):
-    s = float(sum(currentCards))
-    return np.random.choice(len(currentCards), 1, p=[x/s for x in currentCards])[0]
-
