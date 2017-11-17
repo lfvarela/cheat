@@ -51,3 +51,13 @@ def drawFavoringCloseCards(currentCards):
       probs[i] = weight
   return uniformDraw(probs)
 
+def logistic_regression(self, states, alpha=0.1):
+	for j in range(len(self.theta)):
+    self.theta[j] += alpha*(self.result - h(state))*state[j]
+
+def h(self, states):
+  prod = sum([self.theta[i]*states[i] for i in range(len(self.theta))])
+  return sigmoid(prod)
+
+def sigmoid(z):
+  return 1.0/float(1 + exp(-z))

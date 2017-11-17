@@ -104,7 +104,7 @@ class Game:
 #print("player {} won".format(game.run()))
 winners = []
 for _ in range(1000):
-  game = Game(agents.Protagonist(), agents.DirectionalBluffDeterministicBluffAccusation())
+  game = Game(agents.Protagonist(), agents.DumbestContender())
   winners.append(game.run())
 print("player 0 won: {}".format( float(len(winners) - sum(winners)) / len(winners) ))
 print("player 1 won: {}".format( float(sum(winners)) / len(winners) ))
