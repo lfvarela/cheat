@@ -50,19 +50,26 @@ def drawFavoringCloseCards(currentCards):
       probs[i] = weight
   return uniformDraw(probs)
 
+
+
+# Logistic regression for our game.
+# states: list of states, where a state is a list of feature values
+# result: For now: either 1 or 0, 1 represents that all states in states led to a win. 0 to a lose
+# alpha: step size?
+#
 # states is a 29 element list (0 - 12: reformatted radial counts of agent cards, 13 - 25: cards played standard format, 26: last rank played, 27: number of opponent cards, 28: offset coefficient)
 # Update rule: https://www.dropbox.com/s/2ywl9jw7aujj0ss/Screenshot%202017-11-16%2022.05.01.png?dl=0
+def logistic_regression(theta, states, result, alpha=0.1):
+  for j in range(len(theta)):
+    theta[j] += alpha*(result - h(state))*state[j]
 
-def logistic_regression(self, states, alpha=0.1):
-	for j in range(len(self.theta)):
-    self.theta[j] += alpha*(self.result - h(state))*state[j]
-
-def h(self, states):
-  prod = sum([self.theta[i]*states[i] for i in range(len(self.theta))])
+def h(theta, states):
+  prod = sum([theta[i]*states[i] for i in range(len(theta))])
   return sigmoid(prod)
 
 def sigmoid(z):
   return 1.0/float(1 + exp(-z))
+
 
 def getState(currentCards, cardsPutDown, lastRank, numOpponentCards):
   distanceVector = [0]*len(currentCards)
