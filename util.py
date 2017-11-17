@@ -59,9 +59,10 @@ def drawFavoringCloseCards(currentCards):
 #
 # states is a 29 element list (0 - 12: reformatted radial counts of agent cards, 13 - 25: cards played standard format, 26: last rank played, 27: number of opponent cards, 28: offset coefficient)
 # Update rule: https://www.dropbox.com/s/2ywl9jw7aujj0ss/Screenshot%202017-11-16%2022.05.01.png?dl=0
-def logistic_regression(theta, states, result, alpha=0.1):
-  for j in range(len(theta)):
-    theta[j] += alpha*(result - h(state))*state[j]
+def logistic_regression(theta, states, result, alpha=0.001):
+  for state in states:
+    for j in range(len(theta)):
+      theta[j] += alpha*(result - h(state))*state[j]
 
 def h(theta, states):
   prod = sum([theta[i]*states[i] for i in range(len(theta))])
@@ -72,20 +73,22 @@ def sigmoid(z):
 
 
 def getState(currentCards, cardsPutDown, lastRank, numOpponentCards):
-  distanceVector = [0]*len(currentCards)
+  stateVector = [0]*len(currentCards)
   middleIndex = 6
-  distanceVector[middleIndex] = currentCards[lastRank]
+  stateVector[middleIndex] = currentCards[lastRank]
   for distance in range(1,7):
-    distanceVector[middleIndex - distance] = currentCards[(lastRank-distance)%len(currentCards)]
-    distanceVector[middleIndex + distance] = currentCards[(lastRank+distance)%len(currentCards)]
-  distanceVector.extend(cardsPutDown)
-  distanceVector.append(lastRank)
-  distanceVector.append(numOpponentCards)
-  distanceVecotr.append(1) #the last term is the bias term
-  return distanceVector
+    stateVector[middleIndex - distance] = currentCards[(lastRank-distance)%len(currentCards)]
+    stateVector[middleIndex + distance] = currentCards[(lastRank+distance)%len(currentCards)]
+  stateVector.extend(cardsPutDown)
+  stateVector.append(lastRank)
+  stateVector.append(numOpponentCards)
+  stateVector.append(1)
+  return stateVector
 
+'''
 currentCards = [1, 3, 2, 4, 0, 0, 4, 2, 1, 1, 0, 2, 2]
 cardsPutDown = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 lastRank = 9
 numOpponentCards = 3
 print(getState(currentCards, cardsPutDown, lastRank, numOpponentCards))
+'''

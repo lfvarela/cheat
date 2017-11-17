@@ -21,24 +21,20 @@ class Agent:
 
 class Protagonist(Agent):
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
-    if len(opponentClaims) == 0:
-      #Play one card and tell the truth
-      randomIndex= util.drawFavoringCloseCards(currentCards)
-      cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
-      claim = (randomIndex, 1)
-      return claim, cards
-    #np.random.rand() < .1
-    if self.opponentBluffing(opponentClaims[-1], currentCards, putDownCards) or numOpponentCards == 0:
+    if np.random.rand() < .1 or numOpponentCards == 0:
       return "Bluff", None
-    claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
-    if cards != None:
-      return claim, cards
-    #Must lie. Draw one card, favouring cards that are far away from last rank.
-    randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
-    cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
-    claim = (opponentClaims[-1][0], 1)
-    print("player {} is bluffing".format(0))
-    return claim, cards
+    currentState = State(currentCards, putDownCards, opponentClaims[-1][0], numOpponentCards)
+    #action has to be (claim, handPlayed)
+    actions = self.getPossibleActions(currentCards, opponentClaims[-1][0])
+    bestAction = None:
+    bestScore = -float('inf')
+    #TODO: Luis condense
+    for action in actions:
+      score = self.getExpectedScore(currentState, action)
+      if score > bestScore:
+        bestAction = action
+        bestScore = score
+    return action
 
   #Assumes opponent is telling the truth most of the time. Finish this!
   def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
