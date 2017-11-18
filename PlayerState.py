@@ -1,11 +1,15 @@
 import util
 
-class State:
+class PlayerState:
   def __init__(self, currentCards, putDownCards, opponentClaim, numOpponentCards):
-    self.radialVector = getRadialVector(currentCards, lastRank)
+    if opponentClaim is None:
+        self.radialVector = currentCards
+    else:
+        self.radialVector = util.getRadialVector(currentCards, opponentClaim[0])
     self.putDownCards = putDownCards
     self.opponentClaim = opponentClaim
     self.numOpponentCards = numOpponentCards
+    self.currentCards = currentCards
 
   def featurize(self):
     result = []

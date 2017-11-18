@@ -82,7 +82,7 @@ def getRadialVector(currentCards, lastRank):
   return radialVector
 
 def buildPutDownCardsOfOne(index, handLen):
-    return [1 if i == index else 0 for i in range(handLen))]
+    return [1 if i == index else 0 for i in range(handLen)]
 
 '''
 currentCards = [1, 3, 2, 4, 0, 0, 4, 2, 1, 1, 0, 2, 2]
