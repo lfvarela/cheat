@@ -2,6 +2,7 @@ import random
 import numpy as np
 import copy
 import util
+import State
 
 class Agent:
   """
@@ -17,38 +18,30 @@ class Agent:
 
 class Protagonist(Agent):
 
+  def __init__(self, theta=None):
+    self.theta = theta
+
   def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
     if np.random.rand() < .1 or numOpponentCards == 0:
       return "Bluff", None
-    currentState = State(currentCards, putDownCards, opponentClaims[-1][0], numOpponentCards)
-    #action has to be (claim, handPlayed)
+    currentState = State(currentCards, putDownCards, opponentClaims[-1], numOpponentCards)
     possibleActions = self.getPossibleActions(currentCards, opponentClaims[-1][0])
-
     # epsilon-greedy exploration
     explorationProb = 0.1
     if random.random() < explorationProb:
-        return random.choice(actions)
+        return random.choice(possibleActions)
     else:
         return max((self.getExpectedScore(currentState, action), action) for action in possibleActions)[1]
 
-'''
-  def getPossibleActions(self, currentCards, currentRank):
-      truthful = False
-      possibleActions = []
-      for dx in [-1,0,1]:
-        newRank = (currentRank + dx) % len(currentCards)
-        if currentCards[newRank] > 0:
-          truthful = True
-          cardsPutDown = util.buildPutDownCardsOfOne(newRank, len(currentCards))
-          claim = (newRank, 1)
-          possibleActions.append((cardsPutDown, claim))
-      if not truthful:
-          newRank = util.drawFavoringFarCards(currentCards, lastRank)
-          cardsPutDown = util.buildPutDownCardsOfOne(newRank, len(currentCards))
-          claim = (newRank, 1)
-          possibleActions.append((cardsPutDown, claim))
-      return possibleActions
-'''
+  #Return the expected score from taking action from state. Scores come from neural network.
+  def getExpectedScore(self, state, action):
+    if self.theta is None:
+      self.theta = [0] * state.getNumFeatures()
+    claim, handPlayed = action
+    #1. Calculate expected score if opponent calls bluff.
+    if currentPlayerBluffed(claim, handPlayed):
+      
+
 
   def getPossibleActions(self, currentCards, currentRank):
     possibleActions = []

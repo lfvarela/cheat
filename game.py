@@ -4,6 +4,11 @@ import copy
 import util
 import agents
 
+'''
+Action[0] = (rank: numCards)
+Action[1] = counts of cards in hand played
+'''
+
 class Game:
   def __init__(self, protagonist, contender):
     self.players= [protagonist, contender]

@@ -72,19 +72,14 @@ def h(theta, states):
 def sigmoid(z):
   return 1.0/float(1 + exp(-z))
 
-
-def getState(currentCards, cardsPutDown, lastRank, numOpponentCards):
-  stateVector = [0]*len(currentCards)
+def getRadialVector(currentCards, lastRank):
+  radialVector = [0]*len(currentCards)
   middleIndex = 6
-  stateVector[middleIndex] = currentCards[lastRank]
+  radialVector[middleIndex] = currentCards[lastRank]
   for distance in range(1,7):
-    stateVector[middleIndex - distance] = currentCards[(lastRank-distance)%len(currentCards)]
-    stateVector[middleIndex + distance] = currentCards[(lastRank+distance)%len(currentCards)]
-  stateVector.extend(cardsPutDown)
-  stateVector.append(lastRank)
-  stateVector.append(numOpponentCards)
-  stateVector.append(1)
-  return stateVector
+    radialVector[middleIndex - distance] = currentCards[(lastRank-distance)%len(currentCards)]
+    radialVector[middleIndex + distance] = currentCards[(lastRank+distance)%len(currentCards)]
+  return radialVector
 
 def buildPutDownCardsOfOne(index, handLen):
     return [1 if i == index else 0 for i in range(handLen))]
@@ -95,4 +90,24 @@ cardsPutDown = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 lastRank = 9
 numOpponentCards = 3
 print(getState(currentCards, cardsPutDown, lastRank, numOpponentCards))
+'''
+
+
+'''
+  def getPossibleActions(self, currentCards, currentRank):
+      truthful = False
+      possibleActions = []
+      for dx in [-1,0,1]:
+        newRank = (currentRank + dx) % len(currentCards)
+        if currentCards[newRank] > 0:
+          truthful = True
+          cardsPutDown = util.buildPutDownCardsOfOne(newRank, len(currentCards))
+          claim = (newRank, 1)
+          possibleActions.append((cardsPutDown, claim))
+      if not truthful:
+          newRank = util.drawFavoringFarCards(currentCards, lastRank)
+          cardsPutDown = util.buildPutDownCardsOfOne(newRank, len(currentCards))
+          claim = (newRank, 1)
+          possibleActions.append((cardsPutDown, claim))
+      return possibleActions
 '''
