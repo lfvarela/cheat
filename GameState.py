@@ -9,7 +9,8 @@ class GameState():
     self.deck = [0] * 13
     self.lastCardsPlayed = None
     self.lastClaim = None
-    self.playerPutDownCards = [[],[]]
+    self.playerPutDownCards = util.initEmptyDecks()
+    self.playerClaims = util.initEmptyDecks()
 
   def getWinner(self):
     if sum(self.playerCards[0]) == 0:
@@ -23,7 +24,7 @@ class GameState():
     return self.currentPlayer
 
   def getCurrentPlayerState(self):
-    return PlayerState(self.playerCards[self.currentPlayer], self.playerPutDownCards[self.currentPlayer], self.lastClaim, len(self.playerCards[self.getCurrentOpponent()]))
+    return PlayerState(self.playerCards[self.currentPlayer], self.playerPutDownCards[self.currentPlayer], self.lastClaim[0], len(self.playerCards[self.getCurrentOpponent()]), self.playerClaims[self.getCurrentOpponent()])
 
   def getLastClaim(self):
     return self.lastClaim
@@ -43,9 +44,11 @@ class GameState():
 
   def reset(self, nextPlayer):
     self.lastClaim = None
-    self.playerPutDownCards = [[],[]]
+    self.playerPutDownCards = util.initEmptyDecks()
     self.lastCardsPlayed = None
     self.currentPlayer = nextPlayer
+    self.playerClaims = util.initEmptyDecks()
+
 
   #Update deck
   #Update player's cards
@@ -53,7 +56,10 @@ class GameState():
   #Update claims
   def putDownCards(self, action):
     claim, cardsPlayed = action
+    util.addStacks(self.putDownCards[self.currentPlayer], cardsPlayed)
+    self.playerClaims[self.currentPlayer][claim[0]] += claim[1]
     util.moveStacks(self.deck, self.playerCards[self.currentPlayer], cardsPlayed)
+    self.playerClaims[self.currentPlayer]
     self.lastCardsPlayed = cardsPlayed
     self.lastClaim = claim
 

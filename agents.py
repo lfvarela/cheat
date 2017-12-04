@@ -43,8 +43,35 @@ class Protagonist(Agent):
     claim, handPlayed = action
     #1. Calculate expected score if opponent calls bluff.
     if currentPlayerBluffed(claim, handPlayed):
-      pass
+      # Opponent calls bluff on our bluff: bad for us
+      new_hand_belief_b = util.addLists([state.currentCards, state.opponentClaims, state.putDownCards])
+      opponentCallsBluffNS = PlayerState(new_hand_belief, None, None, state.numOpponentCards, None)
 
+      # Opponent does not call bluff
+      currCardsCopy = list(state.currentCards)
+      substractStacks(currCardsCopy, handPlayed)
+      opponentNotCallsBluffNS = PlayerState(new_hand_belief, None, claim[0], state.numOpponentCards, None)
+
+      action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
+      return action_value
+
+    else: # Current Player did not bluff
+
+      # Opponent calls bluff (and we did not bluff)
+      currCardsCopy = list(state.currentCards)
+      substractStacks(currCardsCopy, handPlayed)
+      deck_belief = util.addLists([state.opponentClaims, state.putDownCards])
+      opponentCallsBluffNS = PlayerState(currCardsCopy, None, None, state.numOpponentCards + sum(deck_belief), None)
+
+      # Opponent does not call bluff (and we did not bluff)
+      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim[0], state.numOpponentCards, None)
+      action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
+      return action_value
+
+
+  '''
+  All possible actions, including bluffs, where the user claims to put down 1 card.
+  '''
   def getPossibleActions(self, currentCards, currentRank):
     possibleActions = []
     for rank, numCards in enumerate(currentCards):

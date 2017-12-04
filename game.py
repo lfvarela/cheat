@@ -6,7 +6,7 @@ import agents
 from GameState import GameState
 
 '''
-Action[0] = (rank: numCards)
+Action[0] = (rank, numCards)
 Action[1] = counts of cards in hand played
 '''
 class Game():
