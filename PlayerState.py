@@ -17,7 +17,7 @@ class PlayerState:
     result.extend(self.radialVector)
     result.extend(self.putDownCards)
     result.append(self.opponentClaim[0])
-    result.append(numOpponentCards)
+    result.append(self.numOpponentCards)
     return result
 
   def getNumFeatures(self):
