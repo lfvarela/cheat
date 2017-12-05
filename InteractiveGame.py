@@ -29,7 +29,7 @@ class InteractiveGame(controller.Controller):
         """ Create permanent game objects (deck of cards, players etc.) and
         GUI elements in this method. This method is executed during creation of GameApp object.
         """
-
+        self.custom_dict['player_choose_empty'] = False #special choose 
         self.custom_dict['midturn'] = False
 
         self.custom_dict["state"] = GameState([0]*13,[0]*13,0)
@@ -102,21 +102,22 @@ class InteractiveGame(controller.Controller):
     #         :param down: boolean, True for mouse down event, False for mouse up event
     #         :param double_click: boolean, True if it's a double click event
     #     """
-        if down:
-            if pos[1] > 300:
-                last = None
-                for card_ in self.custom_dict["player_stack"].cards:
-                    if card_.is_clicked(pos):
-                        last = card_
-                if last != None and isinstance(card_, card.Card) and len(self.custom_dict["claim_prep"].cards) < 4:
-                    self.move_card(last,self.custom_dict["player_stack"],self.custom_dict["claim_prep"])
-                    # self.custom_dict["claim_prep"].add_card(last)
-                    # self.custom_dict["player_stack"].cards.remove(last)
-            else:
-                for card_ in self.custom_dict["claim_prep"].cards:
-                    if card_.is_clicked(pos):
-                        if isinstance(card_, card.Card):
-                            self.move_card(card_,self.custom_dict["claim_prep"],self.custom_dict["player_stack"])
+         if self.custom_dict['state'].currentPlayer == 0 and self.custom_dict['state'].lastClaim != None:   
+            if down:
+                if pos[1] > 300:
+                    last = None
+                    for card_ in self.custom_dict["player_stack"].cards:
+                        if card_.is_clicked(pos):
+                            last = card_
+                    if last != None and isinstance(card_, card.Card) and len(self.custom_dict["claim_prep"].cards) < 4:
+                        self.move_card(last,self.custom_dict["player_stack"],self.custom_dict["claim_prep"])
+                        # self.custom_dict["claim_prep"].add_card(last)
+                        # self.custom_dict["player_stack"].cards.remove(last)
+                else:
+                    for card_ in self.custom_dict["claim_prep"].cards:
+                        if card_.is_clicked(pos):
+                            if isinstance(card_, card.Card):
+                                self.move_card(card_,self.custom_dict["claim_prep"],self.custom_dict["player_stack"])
                             # self.custom_dict["player_stack"].add_card(card_)
                             # self.custom_dict["claim_prep"].cards.remove(card_)
 
@@ -139,8 +140,13 @@ class InteractiveGame(controller.Controller):
         self.start_game()
 
     def player_choose(self,index):
-        self.custom_dict['state'].lastRank = index
-        self.clean_restart()
+        self.custom_dict['state'].lastClaim = (index,None)
+        if self.clean_restart() == False:
+            self.clean_restart()
+        if self.claim_prep_empty():
+            self.custom_dict['player_choose_empty'] = True
+            return
+        self.custom_dict['player_choose_empty'] = False
         self.gui_interface.show_button(self.settings_json["button"]["go_button"],
                                        lambda: self.player_claim (0), "Go")
 
@@ -151,16 +157,16 @@ class InteractiveGame(controller.Controller):
         claim_prep = self.custom_dict["claim_prep"]
         claim_stack = self.custom_dict["claim_stack"]
         state = self.custom_dict['state']
-        state.lastRank += offset
+        # state.lastRank += offset
         #update last claim played
-        state.lastClaim = (state.lastRank,len(claim_prep.cards))
+        state.lastClaim = (state.lastClaim[0]+offset,len(claim_prep.cards))
 
         #update cards played
         state.lastCardsPlayed = self.convert_cardholder(claim_prep) #will this persist????
 
         state.playerPutDownCards[0] = map(sum, zip(state.playerPutDownCards[0],state.lastCardsPlayed))
 
-        state.playerClaims[0][state.lastRank] += state.lastClaim[1]
+        state.playerClaims[0][state.lastClaim[0]] += state.lastClaim[1]
 
         self.clean_restart()
 
@@ -194,8 +200,10 @@ class InteractiveGame(controller.Controller):
              - Check timers etc.
         """
         #check if bot turn, execute bot action, check if over,
+        if self.custom_dict['player_choose_empty']:
+            self.player_choose(self.custom_dict["state"].lastClaim[0])
         if self.custom_dict['midturn'] == False:
-            if self.custom_dict["state"].lastRank == None and self.custom_dict["state"].currentPlayer == 0:
+            if self.custom_dict["state"].lastClaim == None and self.custom_dict["state"].currentPlayer == 0:
                 self.choose_number()
             else:
                 if self.custom_dict["state"].currentPlayer == 0:
@@ -239,7 +247,14 @@ class InteractiveGame(controller.Controller):
             return 12
 
 
+    def claim_prep_empty(self):
+        return len(self.custom_dict['claim_prep'].cards) <= 0
+
     def player_turn(self):
+
+        if self.claim_prep_empty():
+            return
+
         self.custom_dict['midturn'] = True
         self.gui_interface.show_button(self.settings_json["button"]["plus_button"],
                                        lambda: self.player_claim(1), "+1")
@@ -311,20 +326,18 @@ class InteractiveGame(controller.Controller):
                 claim_stack.move_all_cards(accuser_stack)
 
             state.lastClaim = None
-            state.lastRank = None
             state.lastCardsPlayed = None
 
             state.playerPutDownCards = util.initEmptyDecks()
             state.playerClaims = util.initEmptyDecks()
         else:
 
-            state.lastRank = claim[0]
             #update last claim played
             state.lastClaim = claim
 
             state.playerPutDownCards[1] = map(sum, zip(state.playerPutDownCards[1],action))
 
-            state.playerClaims[1][state.lastRank] += state.lastClaim[1]
+            state.playerClaims[1][state.lastClaim[0]] += state.lastClaim[1]
 
         #update playercards, deck
         self.update_state()
