@@ -11,14 +11,32 @@
 		"move_speed": 50
 	},
 	"deck": {
-		"position": [10, 10],
-		"offset": [0.2, 0]
+		"position": [0, 0],
+		"offset": [0, 0]
 	},
-	"stack": {
+	"player_stack": {
+        "position": [10, 300],
+        "offset": [15, 0]
+    },
+    "bot_stack": {
         "position": [90, 10],
         "offset": [15, 0]
     },
-    "gui": {
-        "restart_button": [10, 360, 50, 25]
+    "claim_stack": {
+        "position": [420, 160],
+        "offset": [0, 0]
+    },
+    "claim_prep": {
+        "position": [10, 160],
+        "offset": [70, 0]
+    },
+    "button": {
+        "restart_button": [10, 360, 50, 25],
+        "plus_button": [300, 185, 30, 30],
+        "stay_button": [340, 185, 30, 30],
+        "minus_button": [380, 185, 30, 30]
+    },"label": {
+        "last_rank": [320, 220]
     }
+
 }
