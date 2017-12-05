@@ -13,10 +13,12 @@ def test_agents(protagonist, contender):
   print "protagonist won:" + str(float(len(winners) - sum(winners)) / len(winners))
 
 def train_data_dumbs(num_iters):
-    pickle_file = './dumb_train.pkl'
+    pickle_file = './dumb_train_2.pkl'
     training_data = []
     if os.path.exists(pickle_file):
+      print 'loading pickle'
       training_data = util.loadPickle(pickle_file)
+      print 'pickle loaded'
 
     for _ in range(num_iters):
       game = Game(agents.DumbestContender(), agents.DumbestContender())
@@ -25,27 +27,29 @@ def train_data_dumbs(num_iters):
       training_data.extend(game.players[0].endGame(winner == 0))
       training_data.extend(game.players[1].endGame(winner == 1))
 
+    print 'writing pickle'
     util.outputPickle(training_data, pickle_file)
+    print 'pickle written'
     print 'train_data point: ' + str(len(training_data))
     return training_data
 
 
 def gather_train_dumb_v_dumb():
     while True:
-        train_data_dumbs(1000)
+        train_data_dumbs(5000)
 
 def create_graph_data():
     results = []
-    training_data = util.loadPickle('./dumb_train.pkl')
+    training_data = util.loadPickle('./dumb_train_2.pkl')
     num_points = 5
     bucket_size = len(training_data)/num_points
     for i in range(num_points):
         print 'starting point ' + str(i)
-        train_data_subset = training_data[:bucket_size*(i+1)]
+        train_data_subset = training_data[bucket_size*i:bucket_size*(i+1)]
         winners = []
         theta = [0]*len(training_data[0][0])
         util.logistic_regression_on_data(theta, train_data_subset)
-        for _ in range(500):
+        for _ in range(10):
           game = Game(agents.Protagonist(theta=theta), agents.DumbestContender())
           winner = game.run()
           winners.append(winner)
@@ -69,8 +73,8 @@ def create_graph_data():
 
 if __name__=='__main__':
   #gather_train_dumb_v_dumb()
-  #create_graph_data()
-  test_agents(agents.DirectionalBluffDeterministicBluffAccusation(), agents.DumbestContender())
+  create_graph_data()
+  #test_agents(agents.DirectionalBluffDeterministicBluffAccusation(), agents.DumbestContender())
   #DirectionalStartDeterministicAccusation
   #DirectionalBluffDeterministicBluffAccusation
   #SheddingContenderWithDeterministicBluffAccusation
