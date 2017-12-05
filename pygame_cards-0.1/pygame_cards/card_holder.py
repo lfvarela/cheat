@@ -110,6 +110,7 @@ class CardsHolder(game_object.GameObject):
         :param card_:  object of the Card class to be appended to the list
         :param on_top: bolean, True if the card should be put on top, False in the bottom
         """
+
         if isinstance(card_, card.Card):
             card_.unclick()
             if on_top:
@@ -119,6 +120,7 @@ class CardsHolder(game_object.GameObject):
                     pos_ = (self.pos[0] + length * self.offset[0],
                             self.pos[1] + length * self.offset[1])
                 card_.set_pos(pos_)
+                #controller.add_move([card_],pos_,1)
                 self.cards.append(card_)
             else:
                 self.cards.insert(0, card_)
