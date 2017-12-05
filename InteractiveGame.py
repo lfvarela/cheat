@@ -7,6 +7,7 @@ import agents
 from PlayerState import PlayerState
 import util
 import copy
+import time
 
 
 
@@ -29,7 +30,10 @@ class InteractiveGame(controller.Controller):
         """ Create permanent game objects (deck of cards, players etc.) and
         GUI elements in this method. This method is executed during creation of GameApp object.
         """
-        self.custom_dict['move_speed'] = [15,40]
+        self.custom_dict['player_choose_print'] = False
+        self.custom_dict['player_turn_message'] = False
+        self.custom_dict['index_to_rank'] = ['2','3','4','5','6','7','8','9','10','J','Q','K','A']
+        self.custom_dict['move_speed'] = [30,40]
         self.custom_dict['player_choose_empty'] = False #special choose 
         self.custom_dict['midturn'] = False
 
@@ -79,6 +83,8 @@ class InteractiveGame(controller.Controller):
         """
         self.custom_dict['player_choose_empty'] = False #special choose 
         self.custom_dict['midturn'] = False
+        self.custom_dict['player_choose_print'] = False
+        self.custom_dict['player_turn_message'] = False
 
         self.custom_dict["state"] = GameState([0]*13,[0]*13,0)
 
@@ -151,7 +157,7 @@ class InteractiveGame(controller.Controller):
         #         self.custom_dict["player_stack"].add_card(card_)
 
     def restart_game(self):
-        """ Put code that cleans up any current game progress and starts the game from scratch.
+        """ Put code that cleans up any currentb game progress and starts the game from scratch.
             start_game() method can be called here to avoid code duplication. For example,
             This method can be used after game over or as a handler of "Restart" button.
         """
@@ -164,12 +170,21 @@ class InteractiveGame(controller.Controller):
         self.start_game()
 
     def player_choose(self,index):
+        
         self.custom_dict['state'].lastClaim = (index,None)
-        if self.clean_restart() == False:
-            self.clean_restart()
+        # if self.clean_restart() == False:
+        #     self.clean_restart()
+
+        if self.custom_dict['player_choose_print'] == False:
+            print 'You chose the rank of ', self.custom_dict['index_to_rank'][index]
+            print 'Choose cards to continue'
+
         if self.claim_prep_empty():
             self.custom_dict['player_choose_empty'] = True
+            self.custom_dict['player_choose_print'] = True
+            self.clean_restart()
             return
+        
         self.custom_dict['player_choose_empty'] = False
         self.gui_interface.show_button(self.settings_json["button"]["go_button"],
                                        lambda: self.player_claim (0), "Go")
@@ -178,6 +193,8 @@ class InteractiveGame(controller.Controller):
     def player_claim(self,offset):
         # TOADD: bot can call bluff now
         #update last rank
+        self.custom_dict['player_turn_message'] = False
+
         claim_prep = self.custom_dict["claim_prep"]
         claim_stack = self.custom_dict["claim_stack"]
         state = self.custom_dict['state']
@@ -194,6 +211,8 @@ class InteractiveGame(controller.Controller):
 
         self.clean_restart()
 
+        print 'You claimed to play ', state.lastClaim[1], ' ', self.custom_dict['index_to_rank'][state.lastClaim[0]], 's'
+
         bot_state = state.getCurrentPlayerState()
 
         bot = self.custom_dict['players'][1]
@@ -201,7 +220,7 @@ class InteractiveGame(controller.Controller):
         bot_claim, bot_action = bot.getAction(bot_state)
 
         if bot_claim == 'Bluff':
-            print 'bot called bluff'
+            print 'The bot called bluff'
             self.handle_bluff(state.lastClaim,state.lastCardsPlayed,True,1)
             return
             #process bluff
@@ -256,7 +275,12 @@ class InteractiveGame(controller.Controller):
         """
         #check if bot turn, execute bot action, check if over,
         if self.custom_dict["state"].gameEnded():
-
+            time.sleep(1)
+            if self.custom_dict["state"].getWinner == 0:
+                print 'You Won'
+            else:
+                print 'You Lost'
+            time.sleep(3)
             self.restart_game()
 
 
@@ -267,8 +291,11 @@ class InteractiveGame(controller.Controller):
                 self.choose_number()
             else:
                 if self.custom_dict["state"].currentPlayer == 0:
+                    
                     self.player_turn()
                 else:
+                    time.sleep(1)
+                    print 'Bot\'s Turn'
                     self.bot_turn()
 
     def cleanup(self):
@@ -291,7 +318,7 @@ class InteractiveGame(controller.Controller):
 
         state.deck = self.convert_cardholder(self.custom_dict["claim_stack"])
 
-        print player_cards[0]
+        # print player_cards[0]
 
     # returns 13 array of card counts
     def convert_cardholder(self,cardholder):
@@ -311,9 +338,20 @@ class InteractiveGame(controller.Controller):
         return len(self.custom_dict['claim_prep'].cards) <= 0
 
     def player_turn(self):
+        if self.custom_dict['player_turn_message'] == False:
+            print 'Your Turn'
+            print 'Choose cards to continue'
+            self.custom_dict['player_turn_message'] = True
 
         if self.claim_prep_empty():
             return
+        self.custom_dict['player_turn_message'] = False
+
+        if self.custom_dict['player_turn_message'] == False:
+            print 'The last claimed rank was ',self.custom_dict['index_to_rank'][self.custom_dict['state'].lastClaim[0]]
+            print 'Choose the new rank you want to claim, +1, +0 or -1'
+            self.custom_dict['player_turn_message'] = True
+
 
         self.custom_dict['midturn'] = True
         self.gui_interface.show_button(self.settings_json["button"]["plus_button"],
@@ -341,6 +379,9 @@ class InteractiveGame(controller.Controller):
             claim, action = bot.getAction(bot_state)
 
         self.convert_action(action,self.custom_dict['bot_stack'])
+
+        print 'The bot claimed to put down ', claim[1], ' ', self.custom_dict['index_to_rank'][claim[0]], 's'
+        print 'Call Bluff, or Continue?'
 
         #set up bot turn, get action, add to bott claim
         self.gui_interface.show_button(self.settings_json["button"]["call_bluff"],
@@ -374,16 +415,20 @@ class InteractiveGame(controller.Controller):
 
         if bluff_call:
 
+            time.sleep(1)
             #if succesful bluff call for player
             if self.bluff(claim,action):
 
+                print 'The bluff call was right!'
+
                 #claim_stack.move_all_cards(accusee_stack)
-                self.move_all(claim_prep,claim_stack,self.is_player_stack(accusee_stack))
+                self.move_all(claim_stack,accusee_stack,self.is_player_stack(accusee_stack))
 
             #if unsuccesful bluff call
             else:
+                print 'The bluff call was wrong'
                 #claim_stack.move_all_cards(accuser_stack)
-                self.move_all(claim_prep,claim_stack,self.is_player_stack(accuser_stack))
+                self.move_all(claim_stack,accuser_stack,self.is_player_stack(accuser_stack))
 
             state.lastClaim = None
             state.lastCardsPlayed = None
@@ -410,13 +455,14 @@ class InteractiveGame(controller.Controller):
 
 
     def is_player_stack(self,stack):
-        return stack == self.custom_dict['stack']
+        return stack == self.custom_dict['player_stack']
 
     def switch_turn(self):
         if self.custom_dict['state'].currentPlayer == 0:
             self.custom_dict['state'].currentPlayer = 1
         else:
             self.custom_dict['state'].currentPlayer = 0
+        print ''
 
         #converts a bot action array into claim prep
     def convert_action(self,action,stack):
@@ -433,8 +479,11 @@ class InteractiveGame(controller.Controller):
     def bluff(self,claim,action):
         return (action[claim[0]]!=claim[1])
 
+
     def choose_number(self):
         self.custom_dict['midturn'] = True
+
+        print 'Choose the next rank to play'
         self.gui_interface.show_button(self.settings_json["button"]["2_button"],
                                        lambda: self.player_choose(0), "2")
         self.gui_interface.show_button(self.settings_json["button"]["3_button"],
