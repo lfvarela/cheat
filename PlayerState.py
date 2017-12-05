@@ -1,13 +1,13 @@
 import util
 
 class PlayerState:
-  def __init__(self, currentCards, putDownCards, lastRank, numOpponentCards, opponentClaims):
-    if lastRank is None:
+  def __init__(self, currentCards, putDownCards, lastClaim, numOpponentCards, opponentClaims):
+    if lastClaim is None:
         self.radialVector = currentCards
     else:
-        self.radialVector = util.getRadialVector(currentCards, lastRank)
+        self.radialVector = util.getRadialVector(currentCards, lastClaim[0])
     self.putDownCards = putDownCards
-    self.lastRank = lastRank
+    self.lastClaim = lastClaim
     self.numOpponentCards = numOpponentCards
     self.currentCards = currentCards
     self.opponentClaims = opponentClaims
