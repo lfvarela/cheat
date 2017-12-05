@@ -12,6 +12,10 @@ def test_agents(protagonist, contender):
     winners.append(game.run())
   print "protagonist won:" + str(float(len(winners) - sum(winners)) / len(winners))
 
+'''
+Play num_iter games of DumbestContender against DumbestContender and gather the last states
+(received from each player) and label 
+'''
 def train_data_dumbs(num_iters):
     pickle_file = './dumb_train_2.pkl'
     training_data = []
@@ -41,15 +45,16 @@ def gather_train_dumb_v_dumb():
 def create_graph_data():
     results = []
     training_data = util.loadPickle('./dumb_train_2.pkl')
-    num_points = 5
+    training_data = training_data[:500000]
+    num_points = 10
     bucket_size = len(training_data)/num_points
     for i in range(num_points):
         print 'starting point ' + str(i)
-        train_data_subset = training_data[bucket_size*i:bucket_size*(i+1)]
+        train_data_subset = training_data[:bucket_size*(i+1)]
         winners = []
         theta = [0]*len(training_data[0][0])
         util.logistic_regression_on_data(theta, train_data_subset)
-        for _ in range(10):
+        for _ in range(500):
           game = Game(agents.Protagonist(theta=theta), agents.DumbestContender())
           winner = game.run()
           winners.append(winner)

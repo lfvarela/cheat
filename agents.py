@@ -26,18 +26,18 @@ class Agent:
 
 class Protagonist(Agent):
 
-  def __init__(self, theta=None):
+  def __init__(self, theta=None, explorationProb=0):
     self.theta = theta
     self.stateHistory = []
+    self.explorationProb = explorationProb
 
   def getAction(self, state):
     self.stateHistory.append(state.featurize())
     if (np.random.rand() < .1 and state.lastClaim is not None) or state.numOpponentCards == 0:
       return "Bluff", None
-    possibleActions = self.getPossibleActions(state.currentCards, state.lastClaim[0])
+    possibleActions = self.getPossibleActions(state.currentCards, state.lastClaim)
     # epsilon-greedy exploration
-    explorationProb = 0.2
-    if random.random() < explorationProb:
+    if random.random() < self.explorationProb:
         return random.choice(possibleActions)
     else:
         return max((self.getExpectedScore(state, action), action) for action in possibleActions)[1]
@@ -56,7 +56,7 @@ class Protagonist(Agent):
       # Opponent does not call bluff
       currCardsCopy = list(state.currentCards)
       util.substractStacks(currCardsCopy, handPlayed)
-      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim[0], state.numOpponentCards, None)
+      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim, state.numOpponentCards, None)
 
       action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
       return action_value
@@ -70,7 +70,7 @@ class Protagonist(Agent):
       opponentCallsBluffNS = PlayerState(currCardsCopy, None, None, state.numOpponentCards + sum(deck_belief), None)
 
       # Opponent does not call bluff (and we did not bluff)
-      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim[0], state.numOpponentCards, None)
+      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim, state.numOpponentCards, None)
       action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
       return action_value
 
@@ -82,15 +82,23 @@ class Protagonist(Agent):
   '''
   All possible actions, including bluffs, where the user claims to put down 1 card.
   '''
-  def getPossibleActions(self, currentCards, currentRank):
+  def getPossibleActions(self, currentCards, lastClaim):
     possibleActions = []
-    for rank, numCards in enumerate(currentCards):
-      if numCards > 0:
-        for dx in [-1,0,1]:
-          claimRank = (rank + dx) % len(currentCards)
-          cardsPutDown = util.buildPutDownCardsOfOne(rank, len(currentCards))
-          claim = (claimRank, 1)
-          possibleActions.append((claim, cardsPutDown))
+    if lastClaim is None:
+        for rank, numCards in enumerate(currentCards):
+          if numCards > 0:
+            for claimRank in range(13):
+              cardsPutDown = util.buildPutDownCardsOfOne(rank, len(currentCards))
+              claim = (claimRank, 1)
+              possibleActions.append((claim, cardsPutDown))
+    else:
+        for rank, numCards in enumerate(currentCards):
+          if numCards > 0:
+            for dx in [-1,0,1]:
+              claimRank = (lastClaim[0] + dx) % len(currentCards)
+              cardsPutDown = util.buildPutDownCardsOfOne(rank, len(currentCards))
+              claim = (claimRank, 1)
+              possibleActions.append((claim, cardsPutDown))
     return possibleActions
 
   #Assumes opponent is telling the truth most of the time. Finish this!
