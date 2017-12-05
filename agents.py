@@ -32,9 +32,9 @@ class Protagonist(Agent):
 
   def getAction(self, state):
     self.stateHistory.append(state.featurize())
-    if (np.random.rand() < .1 and state.lastRank is not None) or state.numOpponentCards == 0:
+    if (np.random.rand() < .1 and state.lastClaim is not None) or state.numOpponentCards == 0:
       return "Bluff", None
-    possibleActions = self.getPossibleActions(state.currentCards, state.lastRank)
+    possibleActions = self.getPossibleActions(state.currentCards, state.lastClaim[0])
     # epsilon-greedy exploration
     explorationProb = 0.2
     if random.random() < explorationProb:
