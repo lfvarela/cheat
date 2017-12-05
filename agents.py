@@ -3,6 +3,7 @@ import numpy as np
 import copy
 import util
 import PlayerState
+import agents
 
 class Agent:
   """
