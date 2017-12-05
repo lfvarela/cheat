@@ -120,31 +120,29 @@ class Protagonist(Agent):
 
 
 class DirectionalStartDeterministicAccusation(Agent):
-  def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
-    if len(opponentClaims) == 0:
+  def getAction(self, state):
+    if state.lastClaim is None:
       #Play one card and tell the truth
-      randomIndex= util.drawFavoringCloseCards(currentCards)
-      cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+      randomIndex= util.drawFavoringCloseCards(state.currentCards)
+      cards = [1 if i == randomIndex else 0 for i in range(len(state.currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
-    #np.random.rand() < .1
-    if self.opponentBluffing(opponentClaims[-1], currentCards, putDownCards) or numOpponentCards == 0:
+    if self.opponentBluffing(state.lastClaim, state.currentCards, state.putDownCards) or state.numOpponentCards == 0:
       return "Bluff", None
-    claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
+    claim, cards = self.tellTruth(state.currentCards, state.lastClaim[0])
     if cards != None:
       return claim, cards
     #Must lie. Draw one card, favouring cards that are far away from last rank.
-    randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
-    cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
-    claim = (opponentClaims[-1][0], 1)
+    randomIndex= util.drawFavoringFarCards(state.currentCards, state.lastClaim[0])
+    cards = [1 if i == randomIndex else 0 for i in range(len(state.currentCards))]
+    claim = (state.lastClaim[0], 1)
     #print("player {} is bluffing".format(0))
     return claim, cards
 
   #Assumes opponent is telling the truth most of the time. Finish this!
   def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
     truth = copy.copy(currentCards)
-    for putDown in putDownCards:
-      util.addStacks(truth, putDown)
+    util.addStacks(truth, putDownCards)
     util.addStacks(truth, util.claim2Cards(opponentClaim))
     for count in truth:
       if count > 4:
@@ -166,30 +164,29 @@ class DirectionalStartDeterministicAccusation(Agent):
     return None, None
 
 class DirectionalBluffDeterministicBluffAccusation(Agent):
-  def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
-    if len(opponentClaims) == 0:
+  def getAction(self, state):
+    if state.lastClaim is None:
       #Play one card and tell the truth
-      randomIndex= util.uniformDraw(currentCards)
-      cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
+      randomIndex= util.uniformDraw(state.currentCards)
+      cards = [1 if i == randomIndex else 0 for i in range(len(state.currentCards))]
       claim = (randomIndex, 1)
       return claim, cards
-    if self.opponentBluffing(opponentClaims[-1], currentCards, putDownCards) or numOpponentCards == 0:
+    if self.opponentBluffing(state.lastClaim, state.currentCards, state.putDownCards) or state.numOpponentCards == 0:
       return "Bluff", None
-    claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
+    claim, cards = self.tellTruth(state.currentCards, state.lastClaim[0])
     if cards != None:
       return claim, cards
     #Must lie. Draw one card, favouring cards that are far away from last rank.
-    randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
-    cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
-    claim = (opponentClaims[-1][0], 1)
+    randomIndex= util.drawFavoringFarCards(state.currentCards, state.lastClaim[0])
+    cards = util.buildPutDownCardsOfOne(randomIndex, len(state.currentCards))
+    claim = (state.lastClaim[0], 1)
     #print("player {} is bluffing".format(0))
     return claim, cards
 
   #Assumes opponent is telling the truth most of the time. Finish this!
   def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
     truth = copy.copy(currentCards)
-    for putDown in putDownCards:
-      util.addStacks(truth, putDown)
+    util.addStacks(truth, putDownCards)
     util.addStacks(truth, util.claim2Cards(opponentClaim))
     for count in truth:
       if count > 4:
