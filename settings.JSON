@@ -24,7 +24,7 @@
     },
     "claim_stack": {
         "position": [420, 160],
-        "offset": [0, 0]
+        "offset": [0.2, 0]
     },
     "claim_prep": {
         "position": [10, 160],

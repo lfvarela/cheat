@@ -29,6 +29,7 @@ class InteractiveGame(controller.Controller):
         """ Create permanent game objects (deck of cards, players etc.) and
         GUI elements in this method. This method is executed during creation of GameApp object.
         """
+        self.custom_dict['move_speed'] = [15,40]
         self.custom_dict['player_choose_empty'] = False #special choose 
         self.custom_dict['midturn'] = False
 
@@ -76,6 +77,13 @@ class InteractiveGame(controller.Controller):
             For example: dealing of cards, initialization of game timer etc.
             This method is triggered by GameApp.execute().
         """
+        self.custom_dict['player_choose_empty'] = False #special choose 
+        self.custom_dict['midturn'] = False
+
+        self.custom_dict["state"] = GameState([0]*13,[0]*13,0)
+
+
+        self.custom_dict["players"] = ['Player',agents.DumbestContender()]
 
         # Shuffle cards in the deck
         self.custom_dict["deck"].shuffle()
@@ -91,7 +99,7 @@ class InteractiveGame(controller.Controller):
 
         self.update_state()
 
-    def addimate_card(self, stack, card_):
+    def addimate_card(self, stack, card_,speed):
         """ Appends a card to the list of self.cards
         :param card_:  object of the Card class to be appended to the list
         :param on_top: bolean, True if the card should be put on top, False in the bottom
@@ -103,7 +111,7 @@ class InteractiveGame(controller.Controller):
                 length = len(stack.cards)
                 pos_ = (stack.pos[0] + length * stack.offset[0],
                         stack.pos[1] + length * stack.offset[1])
-            self.add_move([card_],pos_,16)
+            self.add_move([card_],pos_,speed)
             stack.cards.append(card_)
 
     def process_mouse_event(self, pos, down, double_click):
@@ -125,14 +133,14 @@ class InteractiveGame(controller.Controller):
                         if card_.is_clicked(pos):
                             last = card_
                     if last != None and isinstance(card_, card.Card) and len(self.custom_dict["claim_prep"].cards) < 4:
-                        self.move_card(last,self.custom_dict["player_stack"],self.custom_dict["claim_prep"])
+                        self.move_card(last,self.custom_dict["player_stack"],self.custom_dict["claim_prep"],self.custom_dict['move_speed'][0])
                         # self.custom_dict["claim_prep"].add_card(last)
                         # self.custom_dict["player_stack"].cards.remove(last)
                 else:
                     for card_ in self.custom_dict["claim_prep"].cards:
                         if card_.is_clicked(pos):
                             if isinstance(card_, card.Card):
-                                self.move_card(card_,self.custom_dict["claim_prep"],self.custom_dict["player_stack"])
+                                self.move_card(card_,self.custom_dict["claim_prep"],self.custom_dict["player_stack"],self.custom_dict['move_speed'][0])
                             # self.custom_dict["player_stack"].add_card(card_)
                             # self.custom_dict["claim_prep"].cards.remove(card_)
 
@@ -147,6 +155,7 @@ class InteractiveGame(controller.Controller):
             start_game() method can be called here to avoid code duplication. For example,
             This method can be used after game over or as a handler of "Restart" button.
         """
+        self.gui_interface.clean()
         for obj in self.rendered_objects:
             obj.move_all_cards(self.custom_dict["deck"])
         # self.custom_dict["player_stack"].move_all_cards()
@@ -185,27 +194,54 @@ class InteractiveGame(controller.Controller):
 
         self.clean_restart()
 
+        bot_state = state.getCurrentPlayerState()
 
-        claim_prep.move_all_cards(claim_stack)
+        bot = self.custom_dict['players'][1]
+
+        bot_claim, bot_action = bot.getAction(bot_state)
+
+        if bot_claim == 'Bluff':
+            print 'bot called bluff'
+            self.handle_bluff(state.lastClaim,state.lastCardsPlayed,True,1)
+            return
+            #process bluff
+
+        #claim_prep.move_all_cards(claim_stack)
+        self.move_all(claim_prep,claim_stack)
 
         self.update_state()
 
         # print state.lastRank, state.lastClaim,state.lastCardsPlayed,state.playerPutDownCards,state.playerClaims[0],state.deck
 
         self.custom_dict['midturn'] = False
-        self.custom_dict['state'].currentPlayer = 1
+        self.switch_turn()
 
         #no longer midturn
 
 
     #adds card to sink and removes from source
-    def move_card(self,card,source,sink):
+    def move_card(self,card,source,sink,speed):
 
         # write own add_card with animation
-        self.addimate_card(sink,card)
+        self.addimate_card(sink,card,speed)
         source.cards.remove(card)
 
         #need to fix lack of updated decks
+
+    def move_all(self,source,sink,face_up=False):
+
+
+        cards_copy = copy.copy(source.cards)
+
+        for card in cards_copy:
+
+            self.move_card(card,source,sink,self.custom_dict['move_speed'][1])
+            if face_up:
+                if card.back_up == True:
+                    card.flip()
+            else:
+                if card.back_up == False:
+                    card.flip()
 
     def execute_game(self):
         """ This method is called in an endless loop started by GameApp.execute().
@@ -219,6 +255,11 @@ class InteractiveGame(controller.Controller):
              - Check timers etc.
         """
         #check if bot turn, execute bot action, check if over,
+        if self.custom_dict["state"].gameEnded():
+
+            self.restart_game()
+
+
         if self.custom_dict['player_choose_empty']:
             self.player_choose(self.custom_dict["state"].lastClaim[0])
         if self.custom_dict['midturn'] == False:
@@ -296,11 +337,7 @@ class InteractiveGame(controller.Controller):
 
         claim, action = bot.getAction(bot_state)
 
-        print claim
-
-        print action
-
-        if claim == 'Bluff':
+        while claim == 'Bluff':
             claim, action = bot.getAction(bot_state)
 
         self.convert_action(action,self.custom_dict['bot_stack'])
@@ -331,18 +368,22 @@ class InteractiveGame(controller.Controller):
             accusee_stack = self.custom_dict['player_stack']
             accuser_stack = self.custom_dict['bot_stack']
 
-        claim_prep.move_all_cards(claim_stack)
+
+        #claim_prep.move_all_cards(claim_stack)
+        self.move_all(claim_prep,claim_stack)
 
         if bluff_call:
 
             #if succesful bluff call for player
             if self.bluff(claim,action):
 
-                claim_stack.move_all_cards(accusee_stack)
+                #claim_stack.move_all_cards(accusee_stack)
+                self.move_all(claim_prep,claim_stack,self.is_player_stack(accusee_stack))
 
             #if unsuccesful bluff call
             else:
-                claim_stack.move_all_cards(accuser_stack)
+                #claim_stack.move_all_cards(accuser_stack)
+                self.move_all(claim_prep,claim_stack,self.is_player_stack(accuser_stack))
 
             state.lastClaim = None
             state.lastCardsPlayed = None
@@ -365,8 +406,17 @@ class InteractiveGame(controller.Controller):
 
         self.custom_dict['midturn'] = False
         #switch to other player
-        self.custom_dict['state'].currentPlayer = 0
+        self.switch_turn()
 
+
+    def is_player_stack(self,stack):
+        return stack == self.custom_dict['stack']
+
+    def switch_turn(self):
+        if self.custom_dict['state'].currentPlayer == 0:
+            self.custom_dict['state'].currentPlayer = 1
+        else:
+            self.custom_dict['state'].currentPlayer = 0
 
         #converts a bot action array into claim prep
     def convert_action(self,action,stack):
@@ -377,7 +427,7 @@ class InteractiveGame(controller.Controller):
             if action_copy[index] > 0:
                 action_copy[index] -= 1
                 #self.add_move([card],self.settings_json["claim_prep"]["position"],8)
-                self.move_card(card,stack,self.custom_dict['claim_prep'])
+                self.move_card(card,stack,self.custom_dict['claim_prep'],self.custom_dict['move_speed'][0])
 
 
     def bluff(self,claim,action):
