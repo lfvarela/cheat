@@ -1,4 +1,6 @@
 import numpy as np
+import math
+import pickle
 
 '''
 A bunch of helper functions
@@ -74,7 +76,13 @@ def drawFavoringCloseCards(currentCards):
 def logistic_regression(theta, states, result, alpha=0.001):
   for state in states:
     for j in range(len(theta)):
-      theta[j] += alpha*(result - h(state))*state[j]
+      theta[j] += alpha*(result - h(theta, state))*state[j]
+
+
+def logistic_regression_on_data(theta, train_data, alpha=0.001):
+  for x, y in train_data:
+    for j in range(len(theta)):
+      theta[j] += alpha*(y - h(theta, x))*x[j]
 
 
 def h(theta, features):
@@ -83,7 +91,7 @@ def h(theta, features):
 
 
 def sigmoid(z):
-  return 1.0/float(1 + exp(-z))
+  return 1.0/float(1 + math.exp(-z))
 
 
 def getRadialVector(currentCards, lastRank):
@@ -109,6 +117,22 @@ def addLists(lists):
         for i, x in enumerate(l):
             res[i] += x
     return res
+
+def currentPlayerBluffed(claim, handPlayed):
+    standardizedClaim = [claim[1] if claim[0] == i else 0 for i in range(13)]
+    return standardizedClaim != handPlayed
+
+
+def outputPickle(l, filename):
+    with open(filename, 'wb') as f:
+        pickle.dump(l, f)
+
+
+def loadPickle(filename):
+    with open(filename, 'rb') as f:
+        theta = pickle.load(f)
+        return theta
+
 '''
 currentCards = [1, 3, 2, 4, 0, 0, 4, 2, 1, 1, 0, 2, 2]
 cardsPutDown = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

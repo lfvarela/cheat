@@ -28,14 +28,15 @@ class Game():
   def run(self):
     gameState = self.gameState
     while not gameState.gameEnded():
-      print("It is player {} turn".format(gameState.getCurrentPlayer()))
+      #print("It is player {} turn".format(gameState.getCurrentPlayer()))
       gameState.sanityCheck()
       action = self.players[gameState.getCurrentPlayer()].getAction(gameState.getCurrentPlayerState())
-      print("claim: {}".format(action[0]))
-      print("cardsPlayed: {}".format(action[1]))
+      #print("claim: {}".format(action[0]))
+      #print("cardsPlayed: {}".format(action[1]))
       self.updateGameState(action)
-      print("")
-      print("")
+      #print("")
+      #print("")
+
     return gameState.getWinner()
 
   def updateGameState(self, action):
@@ -44,10 +45,10 @@ class Game():
     if claim == "Bluff":
       opponentBluffed = self.didOpponentBluff(gameState.getLastClaim(), gameState.getLastCardsPlayed())
       if opponentBluffed:
-        print("player {} was caught bluffing".format(gameState.getCurrentOpponent()))
+        #print("player {} was caught bluffing".format(gameState.getCurrentOpponent()))
         gameState.penalise(gameState.getCurrentOpponent())
       else:
-        print("player {} called bluff incorrectly".format(gameState.getCurrentPlayer()))
+        #print("player {} called bluff incorrectly".format(gameState.getCurrentPlayer()))
         gameState.penalise(gameState.getCurrentPlayer())
     else:
       gameState.putDownCards(action)
@@ -56,15 +57,3 @@ class Game():
   def didOpponentBluff(self, opponentClaim, cardsLastPlayed):
     cardIndex = opponentClaim[0]
     return opponentClaim[1] != cardsLastPlayed[cardIndex]
-
-#game = Game(Protagonist(), DumbestContender())
-#print("player {} won".format(game.run()))
-winners = []
-for _ in range(1000):
-  game = Game(agents.DumbestContender(), agents.DumbestContender())
-  winners.append(game.run())
-print("player 0 won: {}".format( float(len(winners) - sum(winners)) / len(winners) ))
-print("player 1 won: {}".format( float(sum(winners)) / len(winners) ))
-
-#test = [5, 7, 3, 0, 0, 0, 1, 2, 3, 10, 1, 1, 5]
-#print(util.drawFavoringCloseCards(test))

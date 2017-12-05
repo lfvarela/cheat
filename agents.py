@@ -2,7 +2,7 @@ import random
 import numpy as np
 import copy
 import util
-import PlayerState
+from PlayerState import PlayerState
 
 class Agent:
   """
@@ -20,17 +20,23 @@ class Agent:
   def setGame(self, game):
     self.game = game
 
+  # Returns any info we need after game ends. For Logistic Regression, return theta
+  def endGame(self, i_won):
+    return None
+
 class Protagonist(Agent):
 
   def __init__(self, theta=None):
     self.theta = theta
+    self.stateHistory = []
 
   def getAction(self, state):
-    if np.random.rand() < .1 or state.numOpponentCards == 0:
+    self.stateHistory.append(state.featurize())
+    if (np.random.rand() < .1 and state.lastRank is not None) or state.numOpponentCards == 0:
       return "Bluff", None
     possibleActions = self.getPossibleActions(state.currentCards, state.lastRank)
     # epsilon-greedy exploration
-    explorationProb = 0.1
+    explorationProb = 0.2
     if random.random() < explorationProb:
         return random.choice(possibleActions)
     else:
@@ -42,15 +48,15 @@ class Protagonist(Agent):
       self.theta = [0] * state.getNumFeatures()
     claim, handPlayed = action
     #1. Calculate expected score if opponent calls bluff.
-    if currentPlayerBluffed(claim, handPlayed):
+    if util.currentPlayerBluffed(claim, handPlayed):
       # Opponent calls bluff on our bluff: bad for us
       new_hand_belief_b = util.addLists([state.currentCards, state.opponentClaims, state.putDownCards])
-      opponentCallsBluffNS = PlayerState(new_hand_belief, None, None, state.numOpponentCards, None)
+      opponentCallsBluffNS = PlayerState(new_hand_belief_b, None, None, state.numOpponentCards, None)
 
       # Opponent does not call bluff
       currCardsCopy = list(state.currentCards)
-      substractStacks(currCardsCopy, handPlayed)
-      opponentNotCallsBluffNS = PlayerState(new_hand_belief, None, claim[0], state.numOpponentCards, None)
+      util.substractStacks(currCardsCopy, handPlayed)
+      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim[0], state.numOpponentCards, None)
 
       action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
       return action_value
@@ -59,7 +65,7 @@ class Protagonist(Agent):
 
       # Opponent calls bluff (and we did not bluff)
       currCardsCopy = list(state.currentCards)
-      substractStacks(currCardsCopy, handPlayed)
+      util.substractStacks(currCardsCopy, handPlayed)
       deck_belief = util.addLists([state.opponentClaims, state.putDownCards])
       opponentCallsBluffNS = PlayerState(currCardsCopy, None, None, state.numOpponentCards + sum(deck_belief), None)
 
@@ -67,6 +73,10 @@ class Protagonist(Agent):
       opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim[0], state.numOpponentCards, None)
       action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
       return action_value
+
+  def endGame(self, i_won):
+    util.logistic_regression(self.theta, self.stateHistory[-100:], 1 if i_won else 0)
+    return self.theta
 
 
   '''
@@ -127,7 +137,7 @@ class DirectionalStartDeterministicAccusation(Agent):
     randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
     cards = [1 if i == randomIndex else 0 for i in range(len(currentCards))]
     claim = (opponentClaims[-1][0], 1)
-    print("player {} is bluffing".format(0))
+    #print("player {} is bluffing".format(0))
     return claim, cards
 
   #Assumes opponent is telling the truth most of the time. Finish this!
@@ -172,7 +182,7 @@ class DirectionalBluffDeterministicBluffAccusation(Agent):
     randomIndex= util.drawFavoringFarCards(currentCards, opponentClaims[-1][0])
     cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
     claim = (opponentClaims[-1][0], 1)
-    print("player {} is bluffing".format(0))
+    #print("player {} is bluffing".format(0))
     return claim, cards
 
   #Assumes opponent is telling the truth most of the time. Finish this!
@@ -283,7 +293,11 @@ class SheddingContender(Agent):
     return None, None
 
 class DumbestContender(Agent):
+  def __init__(self):
+    self.stateHistory = []
+
   def getAction(self, state):
+    self.stateHistory.append(state.featurize())
     if state.lastRank is None:
       #Play one card and tell the truth
       randomIndex= util.uniformDraw(state.currentCards)
@@ -299,7 +313,7 @@ class DumbestContender(Agent):
     randomIndex= util.uniformDraw(state.currentCards)
     cards = util.buildPutDownCardsOfOne(randomIndex, len(state.currentCards))
     claim = (state.lastRank, 1)
-    print("player {} is bluffing".format(1))
+    #print("player {} is bluffing".format(1))
     return claim, cards
 
   def tellTruth(self, currentCards, lastRank):
@@ -308,3 +322,6 @@ class DumbestContender(Agent):
       if currentCards[index] > 0:
         return (index, 1), util.buildPutDownCardsOfOne(index, len(currentCards))
     return None, None
+
+  def endGame(self, i_won):
+    return [(x, 1 if i_won else 0) for x in self.stateHistory[-20:]]
