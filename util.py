@@ -11,6 +11,12 @@ def addStacks(target, source):
     target[i] += source[i]
 
 
+# Decrements target by source without changing source.
+def substractStacks(target, source):
+  for i in range(len(target)):
+    target[i] -= source[i]
+
+
 # Adds cards from source to target. Changes source by decrementing
 #nsource by cards.
 def moveStacks(target, source, cards):
@@ -62,7 +68,7 @@ def drawFavoringCloseCards(currentCards):
 # result: For now: either 1 or 0, 1 represents that all states in states led to a win. 0 to a lose
 # alpha: step size?
 #
-# states is a 29 element list (0 - 12: reformatted radial counts of agent cards, 13 - 25: cards played standard format, 26: last rank played, 27: number of opponent cards, 28: offset coefficient)
+# states is a 29 element list (0 - 12: reformatted radial counts of agent cards, 13 - 25: cards played standard format, 28: number of opponent cards, 29: offset coefficient)
 # Update rule: https://www.dropbox.com/s/2ywl9jw7aujj0ss/Screenshot%202017-11-16%2022.05.01.png?dl=0
 # CS 229 lecture notes: http://cs229.stanford.edu/notes/cs229-notes1.pdf
 def logistic_regression(theta, states, result, alpha=0.001):
@@ -71,8 +77,8 @@ def logistic_regression(theta, states, result, alpha=0.001):
       theta[j] += alpha*(result - h(state))*state[j]
 
 
-def h(theta, states):
-  prod = sum([theta[i]*states[i] for i in range(len(theta))])
+def h(theta, features):
+  prod = sum([theta[i]*features[i] for i in range(len(theta))])
   return sigmoid(prod)
 
 
@@ -93,6 +99,16 @@ def getRadialVector(currentCards, lastRank):
 def buildPutDownCardsOfOne(index, handLen):
     return [1 if i == index else 0 for i in range(handLen)]
 
+# Initializes two lists of 13 zeros, modeling player empty hands.
+def initEmptyDecks():
+    return [[0]*13, [0]*13]
+
+def addLists(lists):
+    res = [0]*len(lists[0])
+    for l in lists:
+        for i, x in enumerate(l):
+            res[i] += x
+    return res
 '''
 currentCards = [1, 3, 2, 4, 0, 0, 4, 2, 1, 1, 0, 2, 2]
 cardsPutDown = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
