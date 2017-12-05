@@ -4,6 +4,7 @@ import copy
 import util
 import agents
 from GameState import GameState
+from random import shuffle
 
 '''
 Action[0] = (rank, numCards)
@@ -20,10 +21,15 @@ class Game():
     for _ in range(4):
       for i in range(0,13):
         initialCards.append(i)
-    for _ in range(26):
-      protagonistCards[initialCards.pop(random.randint(0,len(initialCards)-1))]+=1
-      contenderCards[initialCards.pop(random.randint(0,len(initialCards)-1))]+=1
-    self.gameState = GameState(protagonistCards, contenderCards, 0)
+    shuffle(initialCards)
+    for i in range(26):
+      protagonistCards[initialCards[i]]+=1
+    for i in range(26, 52):
+      contenderCards[initialCards[i]]+=1
+    #for _ in range(26):
+      #protagonistCards[initialCards.pop(random.randint(0,len(initialCards)-1))]+=1
+      #contenderCards[initialCards.pop(random.randint(0,len(initialCards)-1))]+=1
+    self.gameState = GameState(protagonistCards, contenderCards, random.randint(0,1))
 
   def run(self):
     gameState = self.gameState
@@ -40,7 +46,7 @@ class Game():
     return gameState.getWinner()
 
   def updateGameState(self, action):
-    claim, cardsPlayed =action
+    claim, cardsPlayed = action
     gameState = self.gameState
     if claim == "Bluff":
       opponentBluffed = self.didOpponentBluff(gameState.getLastClaim(), gameState.getLastCardsPlayed())

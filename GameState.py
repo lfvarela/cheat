@@ -5,8 +5,7 @@ import random
 class GameState():
   def __init__(self, protagonistCards, contenderCards, currentPlayer):
     self.playerCards = [protagonistCards, contenderCards]
-    self.currentPlayer = currentPlayer#random.randint(0,2)#random choice between player 0 or 1
-    self.lastRank = None
+    self.currentPlayer = currentPlayer
     self.deck = [0] * 13
     self.lastCardsPlayed = None
     self.lastClaim = None
@@ -14,9 +13,10 @@ class GameState():
     self.playerClaims = util.initEmptyDecks()
 
   def getWinner(self):
-    if sum(self.playerCards[0]) == 0:
-      return 0
-    return 1
+    #if sum(self.playerCards[1]) == 0:
+      #return 1
+    #return 0
+    return self.currentPlayer
 
   def gameEnded(self):
     return sum(self.playerCards[self.currentPlayer]) == 0
@@ -25,7 +25,7 @@ class GameState():
     return self.currentPlayer
 
   def getCurrentPlayerState(self):
-    return PlayerState(self.playerCards[self.currentPlayer], self.playerPutDownCards[self.currentPlayer], self.lastClaim[0] if self.lastClaim else None, len(self.playerCards[self.getCurrentOpponent()]), self.playerClaims[self.getCurrentOpponent()])
+    return PlayerState(self.playerCards[self.currentPlayer], self.playerPutDownCards[self.currentPlayer], self.lastClaim, len(self.playerCards[self.getCurrentOpponent()]), self.playerClaims[self.getCurrentOpponent()])
 
   def getLastClaim(self):
     return self.lastClaim
@@ -41,6 +41,8 @@ class GameState():
 
   def penalise(self, player):
     util.transferStacks(self.playerCards[player], self.deck)
+    if sum(self.deck) != 0:
+      raise("Deck is not zero after penalty")
     self.reset(player)
 
   def reset(self, nextPlayer):
@@ -60,7 +62,6 @@ class GameState():
     util.addStacks(self.playerPutDownCards[self.currentPlayer], cardsPlayed)
     self.playerClaims[self.currentPlayer][claim[0]] += claim[1]
     util.moveStacks(self.deck, self.playerCards[self.currentPlayer], cardsPlayed)
-    self.playerClaims[self.currentPlayer]
     self.lastCardsPlayed = cardsPlayed
     self.lastClaim = claim
 
@@ -74,3 +75,6 @@ class GameState():
       raise("Does not sum")
     if not all(i >= 0 for i in self.deck):
       raise("Negative deck")
+    for count in util.addLists([self.deck, self.playerCards[0], self.playerCards[1]]):
+      if count != 4:
+        raise("Expected each rank to be present 4 times")

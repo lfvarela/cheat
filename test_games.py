@@ -70,4 +70,4 @@ def create_graph_data():
 if __name__=='__main__':
   #gather_train_dumb_v_dumb()
   #create_graph_data()
-  test_agents(agents.DumbestContender(), agents.DumbestContender())
+  test_agents(agents.SheddingContender(),agents.SheddingContender())
