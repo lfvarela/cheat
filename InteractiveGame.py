@@ -91,6 +91,21 @@ class InteractiveGame(controller.Controller):
 
         self.update_state()
 
+    def addimate_card(self, stack, card_):
+        """ Appends a card to the list of self.cards
+        :param card_:  object of the Card class to be appended to the list
+        :param on_top: bolean, True if the card should be put on top, False in the bottom
+        """
+        if isinstance(card_, card.Card):
+            card_.unclick()
+            pos_ = stack.pos
+            if len(stack.cards) is not 0:
+                length = len(stack.cards)
+                pos_ = (stack.pos[0] + length * stack.offset[0],
+                        stack.pos[1] + length * stack.offset[1])
+            self.add_move([card_],pos_,16)
+            stack.cards.append(card_)
+
     def process_mouse_event(self, pos, down, double_click):
 
 
@@ -185,8 +200,12 @@ class InteractiveGame(controller.Controller):
 
     #adds card to sink and removes from source
     def move_card(self,card,source,sink):
-        sink.add_card(card)
+
+        # write own add_card with animation
+        self.addimate_card(sink,card)
         source.cards.remove(card)
+
+        #need to fix lack of updated decks
 
     def execute_game(self):
         """ This method is called in an endless loop started by GameApp.execute().
@@ -349,7 +368,7 @@ class InteractiveGame(controller.Controller):
         self.custom_dict['state'].currentPlayer = 0
 
 
-        #converts an action array into claim prep
+        #converts a bot action array into claim prep
     def convert_action(self,action,stack):
         action_copy = copy.deepcopy(action)
 
@@ -357,10 +376,8 @@ class InteractiveGame(controller.Controller):
             index = self.rank_to_index(card.rank)
             if action_copy[index] > 0:
                 action_copy[index] -= 1
+                #self.add_move([card],self.settings_json["claim_prep"]["position"],8)
                 self.move_card(card,stack,self.custom_dict['claim_prep'])
-
-
-
 
 
     def bluff(self,claim,action):
