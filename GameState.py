@@ -1,10 +1,11 @@
 from PlayerState import PlayerState
 import util
+import random
 
 class GameState():
   def __init__(self, protagonistCards, contenderCards, currentPlayer):
     self.playerCards = [protagonistCards, contenderCards]
-    self.currentPlayer = currentPlayer
+    self.currentPlayer = currentPlayer#random.randint(0,2)#random choice between player 0 or 1
     self.lastRank = None
     self.deck = [0] * 13
     self.lastCardsPlayed = None

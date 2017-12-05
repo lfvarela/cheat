@@ -259,23 +259,23 @@ class SheddingContenderWithDeterministicBluffAccusation(Agent):
     return None, None
 
 class SheddingContender(Agent):
-  def getAction(self, currentCards, putDownCards, opponentClaims, currentClaims, numOpponentCards):
-    if len(opponentClaims) == 0:
+  def getAction(self, state):
+    if state.lastRank == None:
       #Play one card and tell the truth
-      randomIndex= util.uniformDraw(currentCards)
-      cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
+      randomIndex= util.uniformDraw(state.currentCards)
+      cards = util.buildPutDownCardsOfOne(randomIndex, len(state.currentCards))
       claim = (randomIndex, 1)
       return claim, cards
-    if np.random.rand() < .1 or numOpponentCards == 0: #Call bluff 10% of the time or when the opponent has no cards.
+    if np.random.rand() < .1 or state.numOpponentCards == 0: #Call bluff 10% of the time or when the opponent has no cards.
       return "Bluff", None
-    claim, cards = self.tellTruth(currentCards, opponentClaims[-1][0])
+    claim, cards = self.tellTruth(state.currentCards, state.lastRank)
     if cards != None:
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
-    randomIndex= util.uniformDraw(currentCards)
-    cards = util.buildPutDownCardsOfOne(randomIndex, len(currentCards))
-    claim = (opponentClaims[-1][0], 1)
-    print("player {} is bluffing".format(1))
+    randomIndex= util.uniformDraw(state.currentCards)
+    cards = util.buildPutDownCardsOfOne(randomIndex, len(state.currentCards))
+    claim = (state.lastRank, 1)
+    #print("player {} is bluffing".format(1))
     return claim, cards
 
   def tellTruth(self, currentCards, lastRank):

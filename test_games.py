@@ -4,6 +4,13 @@ from game import Game
 import util
 import agents
 
+def test_agents(protagonist, contender):
+  winners = []
+  for i in range(10000):
+    print(i)
+    game = Game(protagonist, contender)
+    winners.append(game.run())
+  print "protagonist won:" + str(float(len(winners) - sum(winners)) / len(winners))
 
 def train_data_dumbs(num_iters):
     pickle_file = './dumb_train.pkl'
@@ -62,4 +69,5 @@ def create_graph_data():
 
 if __name__=='__main__':
   #gather_train_dumb_v_dumb()
-  create_graph_data()
+  #create_graph_data()
+  test_agents(agents.DumbestContender(), agents.DumbestContender())
