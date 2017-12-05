@@ -28,7 +28,7 @@ class Protagonist(Agent):
   def getAction(self, state):
     if np.random.rand() < .1 or state.numOpponentCards == 0:
       return "Bluff", None
-    possibleActions = self.getPossibleActions(state.currentCards, state.opponentClaim[0])
+    possibleActions = self.getPossibleActions(state.currentCards, state.lastRank)
     # epsilon-greedy exploration
     explorationProb = 0.1
     if random.random() < explorationProb:
@@ -284,7 +284,7 @@ class SheddingContender(Agent):
 
 class DumbestContender(Agent):
   def getAction(self, state):
-    if state.opponentClaim == None:
+    if state.lastRank is None:
       #Play one card and tell the truth
       randomIndex= util.uniformDraw(state.currentCards)
       cards = util.buildPutDownCardsOfOne(randomIndex, len(state.currentCards))
@@ -292,13 +292,13 @@ class DumbestContender(Agent):
       return claim, cards
     if np.random.rand() < .1 or state.numOpponentCards == 0: #Call bluff 10% of the time or when the opponent has no cards.
       return "Bluff", None
-    claim, cards = self.tellTruth(state.currentCards, state.opponentClaim[0])
+    claim, cards = self.tellTruth(state.currentCards, state.lastRank)
     if cards != None:
       return claim, cards
     #Must lie. Draw one random card from currentCards and claim same as opponent's last card
     randomIndex= util.uniformDraw(state.currentCards)
     cards = util.buildPutDownCardsOfOne(randomIndex, len(state.currentCards))
-    claim = (state.opponentClaim[0], 1)
+    claim = (state.lastRank, 1)
     print("player {} is bluffing".format(1))
     return claim, cards
 

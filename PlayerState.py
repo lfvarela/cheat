@@ -2,7 +2,7 @@ import util
 
 class PlayerState:
   def __init__(self, currentCards, putDownCards, lastRank, numOpponentCards, opponentClaims):
-    if opponentClaim is None:
+    if lastRank is None:
         self.radialVector = currentCards
     else:
         self.radialVector = util.getRadialVector(currentCards, lastRank)
@@ -12,7 +12,7 @@ class PlayerState:
     self.currentCards = currentCards
     self.opponentClaims = opponentClaims
 
-'''
+  '''
   def featurize(self):
     result = []
     result.append(1)
