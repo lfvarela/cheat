@@ -8,6 +8,7 @@ from PlayerState import PlayerState
 import util
 import copy
 import time
+import numpy as np
 
 
 
@@ -39,8 +40,7 @@ class InteractiveGame(controller.Controller):
 
         self.custom_dict["state"] = GameState([0]*13,[0]*13,0)
 
-
-        self.custom_dict["players"] = ['Player',agents.DumbestContender()]
+        self.custom_dict["players"] = ['Player',agents.Protagonist(theta=[0.04149388063901691, -0.32450141090406887, -0.2854153295270072, -0.339655341665818, -0.3183232527428317, -0.24163586357310554, -0.28641893150054665, -0.24315425318351458, -0.24258853298241087, -0.23747379840340724, -0.3399543398972339, -0.3928094237979764, -0.3792357636980495, -0.3413603353555044, 0.3999120370822632])]
 
         deck_pos = self.settings_json["deck"]["position"]
         deck_offset = self.settings_json["deck"]["offset"]
@@ -50,6 +50,10 @@ class InteractiveGame(controller.Controller):
         player_stack_pos = self.settings_json["player_stack"]["position"]
         player_stack_offset = self.settings_json["player_stack"]["offset"]
         self.custom_dict["player_stack"] = card_holder.CardsHolder(pos=player_stack_pos, offset=player_stack_offset,grab_policy=enums.GrabPolicy.can_single_grab)
+
+        deck_pos = self.settings_json["deck"]["position"]
+        deck_offset = self.settings_json["deck"]["offset"]
+        self.custom_dict["buffer_stack"] = card_holder.CardsHolder(pos=player_stack_pos, offset=player_stack_offset,grab_policy=enums.GrabPolicy.can_single_grab)
 
         bot_stack_pos = self.settings_json["bot_stack"]["position"]
         bot_stack_offset = self.settings_json["bot_stack"]["offset"]
@@ -81,6 +85,8 @@ class InteractiveGame(controller.Controller):
             For example: dealing of cards, initialization of game timer etc.
             This method is triggered by GameApp.execute().
         """
+        print ''
+        print 'New Game (Welcome to the Singularity?)'
         self.custom_dict['player_choose_empty'] = False #special choose 
         self.custom_dict['midturn'] = False
         self.custom_dict['player_choose_print'] = False
@@ -102,6 +108,8 @@ class InteractiveGame(controller.Controller):
             card_ = self.custom_dict["deck"].pop_top_card()
             if isinstance(card_, card.Card):
                 self.custom_dict["bot_stack"].add_card(card_)
+
+        self.recalibrate_stack(self.custom_dict["player_stack"])
 
         self.update_state()
 
@@ -200,7 +208,7 @@ class InteractiveGame(controller.Controller):
         state = self.custom_dict['state']
         # state.lastRank += offset
         #update last claim played
-        state.lastClaim = (state.lastClaim[0]+offset,len(claim_prep.cards))
+        state.lastClaim = ((state.lastClaim[0]+offset)%13,len(claim_prep.cards))
 
         #update cards played
         state.lastCardsPlayed = self.convert_cardholder(claim_prep) #will this persist????
@@ -217,7 +225,10 @@ class InteractiveGame(controller.Controller):
 
         bot = self.custom_dict['players'][1]
 
-        bot_claim, bot_action = bot.getAction(bot_state)
+        bot_claim = None
+
+        if (np.random.rand() < .4 and state.lastClaim is not None) or sum(state.playerCards[0]) - state.lastClaim[1] == 0:
+            bot_claim = 'Bluff'
 
         if bot_claim == 'Bluff':
             print 'The bot called bluff'
@@ -245,10 +256,11 @@ class InteractiveGame(controller.Controller):
         self.addimate_card(sink,card,speed)
         source.cards.remove(card)
 
+        self.recalibrate_stack(source)
+
         #need to fix lack of updated decks
 
     def move_all(self,source,sink,face_up=False):
-
 
         cards_copy = copy.copy(source.cards)
 
@@ -261,6 +273,33 @@ class InteractiveGame(controller.Controller):
             else:
                 if card.back_up == False:
                     card.flip()
+
+    # def recalibrate_card(self,card,source,speed):
+    #     source.cards.remove(card)
+    #     # write own addimate_carrd with animation
+    #     self.addimate_card(source,card,speed)
+        
+
+    def recalibrate_stack(self,source):
+
+        # cards_copy = copy.copy(source.cards)
+
+        # cards = []
+
+        # for card in cards_copy:
+        #     source.cards.remove(card)
+        #     cards.append(cards)
+
+        # for card in cards_copy:
+        #     self.addimate_card(card,source,self.custom_dict['move_speed'][1])
+
+        flip = True
+        if source == self.custom_dict['player_stack'] or source == self.custom_dict['claim_prep']:
+            source.sort_cards()
+            flip = False
+        source.move_all_cards(self.custom_dict['buffer_stack'])
+        self.custom_dict['buffer_stack'].move_all_cards(source,flip)
+
 
     def execute_game(self):
         """ This method is called in an endless loop started by GameApp.execute().
@@ -275,6 +314,7 @@ class InteractiveGame(controller.Controller):
         """
         #check if bot turn, execute bot action, check if over,
         if self.custom_dict["state"].gameEnded():
+            print self.custom_dict["state"]
             time.sleep(1)
             if self.custom_dict["state"].getWinner == 0:
                 print 'You Won'
