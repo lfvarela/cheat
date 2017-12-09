@@ -78,8 +78,9 @@ def create_graph_data(train_filename, opponent):
 def train_lr(train_filename, opponent):
     training_data = util.loadPickle(train_filename)
     print len(training_data)
-    theta = [0]*len(training_data[0][0])
-    util.logistic_regression_on_data(theta, training_data)
+    #theta = [0]*len(training_data[0][0])
+    #util.logistic_regression_on_data(theta, training_data)
+    theta = [0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149]
     print theta
     test_lr_vs_dumb(theta, opponent)
 
@@ -114,12 +115,16 @@ if __name__=='__main__':
 # History:
 
 '''
-Adding the new feautures for the number of cards we have improved our percentage wins to 75 percent against a dumb opponent.
+Adding the new feautures for the number of cards we have improved our percentage wins to 75 percent against a dumb opponent. (from 50%)
 Feautures:
     result.append(1)
     result.extend(self.radialVector)
     result.append(self.numOpponentCards)
     result.append(sum(self.radialVector))
+
+Theta: Learned from 5000 games of DumbestContender vs DumbestContender
 Theta: [0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149]
 Results: win 76 percent of games against DumbestContender() after 1000 games.
+
+Using the same theta, but now including actions where we shed more than one card, we now win 95 percent of the time against the Dumbest Contender.
 '''

@@ -82,6 +82,7 @@ class Protagonist(Agent):
   '''
   All possible actions, including bluffs, where the user claims to put down 1 card.
   '''
+  '''
   def getPossibleActions(self, currentCards, lastClaim):
     possibleActions = []
     if lastClaim is None:
@@ -99,6 +100,33 @@ class Protagonist(Agent):
               cardsPutDown = util.buildPutDownCardsOfOne(rank, len(currentCards))
               claim = (claimRank, 1)
               possibleActions.append((claim, cardsPutDown))
+    return possibleActions
+    '''
+
+  '''
+  All possible actions, including bluffs, where the user claims to put down 1 card.
+  '''
+  def getPossibleActions(self, currentCards, lastClaim):
+    possibleActions = []
+    if lastClaim is None:
+        for rank, numCards in enumerate(currentCards):
+          if numCards > 0:
+            for claimRank in range(13):
+              for putDown in range(1, 4 + 1):
+                  if putDown <= numCards:
+                      cardsPutDown = [putDown if i == rank else 0 for i in range(len(currentCards))]
+                      claim = (claimRank, putDown)
+                      possibleActions.append((claim, cardsPutDown))
+    else:
+        for rank, numCards in enumerate(currentCards):
+          if numCards > 0:
+            for dx in [-1,0,1]:
+              for putDown in range(1, 4 + 1):
+                  if putDown <= numCards:
+                      claimRank = (lastClaim[0] + dx) % len(currentCards)
+                      cardsPutDown = [putDown if i == rank else 0 for i in range(len(currentCards))]
+                      claim = (claimRank, putDown)
+                      possibleActions.append((claim, cardsPutDown))
     return possibleActions
 
   #Assumes opponent is telling the truth most of the time. Finish this!
