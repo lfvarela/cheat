@@ -24,6 +24,80 @@ class Agent:
   def endGame(self, i_won):
     return None
 
+
+# Logistic regression. We store our belief of the opponent cards. We call bluff determinitically.
+class LRwithOpponentBelief(Agent):
+
+  def __init__(self, theta=None, explorationProb=0):
+    self.theta = theta
+    self.stateHistory = []
+    self.explorationProb = explorationProb
+    self.opponentBelief
+
+  def getAction(self, state):
+    self.stateHistory.append(state.featurize())
+
+    # Call bluff scenarios: 10% of the times randomly, this will update our belief if the opponent is a bluffer or not. Determinitically if we are sure the opponent is bluffing.
+    if (np.random.rand() < .1 and state.lastClaim is not None) or state.numOpponentCards == 0 or self.opponentBluffing(state.lastClaim, state.currentCards, state.putDownCards):
+      return "Bluff", None
+
+    possibleActions = self.getPossibleActions(state.currentCards, state.lastClaim)
+    # epsilon-greedy exploration
+    if random.random() < self.explorationProb:
+        return random.choice(possibleActions)
+    else:
+        return max((self.getExpectedScore(state, action), action) for action in possibleActions)[1]
+
+  #Return the expected score from taking action from state. Scores come from neural network.
+  def getExpectedScore(self, state, action):
+    if self.theta is None:
+      self.theta = [0] * state.getNumFeatures()
+    claim, handPlayed = action
+    #1. Calculate expected score if opponent calls bluff.
+    if util.currentPlayerBluffed(claim, handPlayed):
+      # Opponent calls bluff on our bluff: bad for us
+      new_hand_belief_b = util.addLists([state.currentCards, state.opponentClaims, state.putDownCards])
+      opponentCallsBluffNS = PlayerState(new_hand_belief_b, None, None, state.numOpponentCards, None)
+
+      # Opponent does not call bluff
+      currCardsCopy = list(state.currentCards)
+      util.substractStacks(currCardsCopy, handPlayed)
+      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim, state.numOpponentCards, None)
+
+      action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
+      return action_value
+
+    else: # Current Player did not bluff
+
+      # Opponent calls bluff (and we did not bluff)
+      currCardsCopy = list(state.currentCards)
+      util.substractStacks(currCardsCopy, handPlayed)
+      deck_belief = util.addLists([state.opponentClaims, state.putDownCards])
+      opponentCallsBluffNS = PlayerState(currCardsCopy, None, None, state.numOpponentCards + sum(deck_belief), None)
+
+      # Opponent does not call bluff (and we did not bluff)
+      opponentNotCallsBluffNS = PlayerState(currCardsCopy, None, claim, state.numOpponentCards, None)
+      action_value = 0.1*util.h(self.theta, opponentCallsBluffNS.featurize()) + 0.9*util.h(self.theta, opponentNotCallsBluffNS.featurize())
+      return action_value
+
+  # A deterministic check to see if opponent is bluffing. We always call bluff when this return true.
+  def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
+    truth = copy.copy(currentCards)
+    for putDown in putDownCards:
+      util.addStacks(truth, putDown)
+    util.addStacks(truth, util.claim2Cards(opponentClaim))
+    for count in truth:
+      if count > 4:
+        return True
+    return False
+
+  def endGame(self, i_won):
+    util.logistic_regression(self.theta, self.stateHistory[-20:], 1 if i_won else 0)
+    return self.theta
+
+
+# Logistic Regression, call bluff 10% of the time.
+# Note, for our expected value of each state, we assume the opponent calls bluff 10% of the time, we will improve this or our next agent. 
 class Protagonist(Agent):
 
   def __init__(self, theta=None, explorationProb=0):
@@ -75,8 +149,36 @@ class Protagonist(Agent):
       return action_value
 
   def endGame(self, i_won):
-    util.logistic_regression(self.theta, self.stateHistory[-100:], 1 if i_won else 0)
-    return self.theta
+    #util.logistic_regression(self.theta, self.stateHistory[-20:], 1 if i_won else 0)
+    #return self.theta
+    return [(x, 1 if i_won else 0) for x in self.stateHistory[-20:]] # Return last 20 states
+
+
+  '''
+  All possible actions, including lies, where the user claims to put down 1-4 cards.
+  '''
+  def getPossibleActions(self, currentCards, lastClaim):
+    possibleActions = []
+    if lastClaim is None:
+        for rank, numCards in enumerate(currentCards):
+          if numCards > 0:
+            for claimRank in range(13):
+              for putDown in range(1, 4 + 1):
+                  if putDown <= numCards:
+                      cardsPutDown = [putDown if i == rank else 0 for i in range(len(currentCards))]
+                      claim = (claimRank, putDown)
+                      possibleActions.append((claim, cardsPutDown))
+    else:
+        for rank, numCards in enumerate(currentCards):
+          if numCards > 0:
+            for dx in [-1,0,1]:
+              for putDown in range(1, 4 + 1):
+                  if putDown <= numCards:
+                      claimRank = (lastClaim[0] + dx) % len(currentCards)
+                      cardsPutDown = [putDown if i == rank else 0 for i in range(len(currentCards))]
+                      claim = (claimRank, putDown)
+                      possibleActions.append((claim, cardsPutDown))
+    return possibleActions
 
 
   '''
@@ -103,32 +205,8 @@ class Protagonist(Agent):
     return possibleActions
     '''
 
-  '''
-  All possible actions, including bluffs, where the user claims to put down 1 card.
-  '''
-  def getPossibleActions(self, currentCards, lastClaim):
-    possibleActions = []
-    if lastClaim is None:
-        for rank, numCards in enumerate(currentCards):
-          if numCards > 0:
-            for claimRank in range(13):
-              for putDown in range(1, 4 + 1):
-                  if putDown <= numCards:
-                      cardsPutDown = [putDown if i == rank else 0 for i in range(len(currentCards))]
-                      claim = (claimRank, putDown)
-                      possibleActions.append((claim, cardsPutDown))
-    else:
-        for rank, numCards in enumerate(currentCards):
-          if numCards > 0:
-            for dx in [-1,0,1]:
-              for putDown in range(1, 4 + 1):
-                  if putDown <= numCards:
-                      claimRank = (lastClaim[0] + dx) % len(currentCards)
-                      cardsPutDown = [putDown if i == rank else 0 for i in range(len(currentCards))]
-                      claim = (claimRank, putDown)
-                      possibleActions.append((claim, cardsPutDown))
-    return possibleActions
-
+    '''
+    TODO: I think we can delete this.
   #Assumes opponent is telling the truth most of the time. Finish this!
   def opponentBluffing(self, opponentClaim, currentCards, putDownCards):
     truth = copy.copy(currentCards)
@@ -153,7 +231,7 @@ class Protagonist(Agent):
     if sizeOfLargestPossibleHand > 0 and largestPossibleHand != None and indexLargestPossibleHand != None:
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
     return None, None
-
+'''
 
 class DirectionalStartDeterministicAccusation(Agent):
   def getAction(self, state):
@@ -293,7 +371,14 @@ class SheddingContenderWithDeterministicBluffAccusation(Agent):
     return None, None
 
 class SheddingContender(Agent):
+  def __init__(self):
+    self.stateHistory = []
+
   def getAction(self, state):
+    state_memory = 20 # Number of states the contender stores
+    if len(self.stateHistory) > 20:
+        self.stateHistory.pop(0)
+    self.stateHistory.append(state.featurize())
     if state.lastClaim is None:
       #Play one card and tell the truth
       randomIndex= util.uniformDraw(state.currentCards)
@@ -325,6 +410,9 @@ class SheddingContender(Agent):
     if sizeOfLargestPossibleHand > 0 and largestPossibleHand != None and indexLargestPossibleHand != None:
       return (indexLargestPossibleHand, sizeOfLargestPossibleHand), largestPossibleHand
     return None, None
+
+  def endGame(self, i_won):
+    return [(x, 1 if i_won else 0) for x in self.stateHistory[-20:]]
 
 class DumbestContender(Agent):
   def __init__(self):

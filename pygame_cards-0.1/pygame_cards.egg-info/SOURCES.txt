@@ -1,4 +1,5 @@
 MANIFEST.in
+setup.cfg
 setup.py
 pygame_cards/__init__.py
 pygame_cards/card.py

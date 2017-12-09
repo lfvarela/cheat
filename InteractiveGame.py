@@ -35,12 +35,12 @@ class InteractiveGame(controller.Controller):
         self.custom_dict['player_turn_message'] = False
         self.custom_dict['index_to_rank'] = ['2','3','4','5','6','7','8','9','10','J','Q','K','A']
         self.custom_dict['move_speed'] = [30,40]
-        self.custom_dict['player_choose_empty'] = False #special choose 
+        self.custom_dict['player_choose_empty'] = False #special choose
         self.custom_dict['midturn'] = False
 
         self.custom_dict["state"] = GameState([0]*13,[0]*13,0)
 
-        self.custom_dict["players"] = ['Player',agents.Protagonist(theta=[0.04149388063901691, -0.32450141090406887, -0.2854153295270072, -0.339655341665818, -0.3183232527428317, -0.24163586357310554, -0.28641893150054665, -0.24315425318351458, -0.24258853298241087, -0.23747379840340724, -0.3399543398972339, -0.3928094237979764, -0.3792357636980495, -0.3413603353555044, 0.3999120370822632])]
+        self.custom_dict["players"] = ['Player',agents.Protagonist(theta = [-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377])]
 
         deck_pos = self.settings_json["deck"]["position"]
         deck_offset = self.settings_json["deck"]["offset"]
@@ -87,7 +87,7 @@ class InteractiveGame(controller.Controller):
         """
         print ''
         print 'New Game (Welcome to the Singularity?)'
-        self.custom_dict['player_choose_empty'] = False #special choose 
+        self.custom_dict['player_choose_empty'] = False #special choose
         self.custom_dict['midturn'] = False
         self.custom_dict['player_choose_print'] = False
         self.custom_dict['player_turn_message'] = False
@@ -139,7 +139,7 @@ class InteractiveGame(controller.Controller):
     #         :param down: boolean, True for mouse down event, False for mouse up event
     #         :param double_click: boolean, True if it's a double click event
     #     """
-         if self.custom_dict['state'].currentPlayer == 0 and self.custom_dict['state'].lastClaim != None:   
+         if self.custom_dict['state'].currentPlayer == 0 and self.custom_dict['state'].lastClaim != None:
             if down:
                 if pos[1] > 300:
                     last = None
@@ -178,7 +178,7 @@ class InteractiveGame(controller.Controller):
         self.start_game()
 
     def player_choose(self,index):
-        
+
         self.custom_dict['state'].lastClaim = (index,None)
         # if self.clean_restart() == False:
         #     self.clean_restart()
@@ -192,7 +192,7 @@ class InteractiveGame(controller.Controller):
             self.custom_dict['player_choose_print'] = True
             self.clean_restart()
             return
-        
+
         self.custom_dict['player_choose_empty'] = False
         self.gui_interface.show_button(self.settings_json["button"]["go_button"],
                                        lambda: self.player_claim (0), "Go")
@@ -278,7 +278,7 @@ class InteractiveGame(controller.Controller):
     #     source.cards.remove(card)
     #     # write own addimate_carrd with animation
     #     self.addimate_card(source,card,speed)
-        
+
 
     def recalibrate_stack(self,source):
 
@@ -331,7 +331,7 @@ class InteractiveGame(controller.Controller):
                 self.choose_number()
             else:
                 if self.custom_dict["state"].currentPlayer == 0:
-                    
+
                     self.player_turn()
                 else:
                     time.sleep(1)
