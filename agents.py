@@ -303,6 +303,9 @@ class DumbestContender(Agent):
     self.stateHistory = []
 
   def getAction(self, state):
+    state_memory = 20 # Number of states the contender stores
+    if len(self.stateHistory) > 20:
+        self.stateHistory.pop(0)
     self.stateHistory.append(state.featurize())
     if state.lastClaim is None:
       #Play one card and tell the truth
