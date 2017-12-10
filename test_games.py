@@ -90,15 +90,23 @@ def test():
     num_wins = 0.0
     i = 1
     theta = [0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149]
+    thetaP = [0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149]
     while i < num_games:
         print theta
-        game = Game(agents.LRwithOpponentBelief(theta=theta), agents.SheddingContender(), verbose=False)
+        game = Game(agents.LRwithOpponentBelief(theta=theta), agents.Protagonist(theta=thetaP), verbose=False)
         winner = game.run()
         # Way 1: Train on the go, just with player 0 states.
         #theta = game.players[0].endGame(winner == 0)
 
         # Way 2: Train on the go, but with states from both players, this strategy could be considered as cheating, but not really.
+        util.logistic_regression(theta, game.players[0].getFinalStates(), 1 if winner == 0 else 0)
         util.logistic_regression(theta, game.players[1].getFinalStates(), 1 if winner == 1 else 0)
+
+        # Way 3: Only update on winning states
+        #if winner == 0:
+        #    util.logistic_regression(theta, game.players[0].getFinalStates(), 1)
+        #if winner == 1:
+        #    util.logistic_regression(theta, game.players[1].getFinalStates(), 1)
         if winner == 0.5:
             print 'draw'
             continue # Draw
@@ -177,9 +185,9 @@ Conclusion: Our strategy and value function depends a lot on our belief of how t
 Now, were buidling a similar protagonist. This one stores our belief of the opponents cards and has a beta for the probabilty of the opponent bluffing.
 This protagonist also updates its thetas after every game played.
 We start with theta = [0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149] for this player
-Starting with these thetas, we beat the DumbestContender 95 percent of the times after 1000 games.
-Starting with these thetas, we beat the SheddingContender 78 percent of the times after 1000 games.
-Starting with these thetas, we beat the SheddingContenderWithDeterministicBluffAccusation 76.1 percent of the times after 1000 games.
-Starting with these thetas, we beat the DirectionalBluffDeterministicBluffAccusation 75.5 percent of the times after 1000 games.
-Starting with these thetas, we beat the DirectionalStartDeterministicAccusation 73.7 percent of the times after 1000 games.
+Starting with these thetas, we beat the DumbestContender 98.5 percent of the times after 1000 games.
+Starting with these thetas, we beat the SheddingContender 98.7 percent of the times after 1000 games.
+Starting with these thetas, we beat the SheddingContenderWithDeterministicBluffAccusation 87.4 percent of the time the times after 1000 games.
+Starting with these thetas, we beat the DirectionalBluffDeterministicBluffAccusation 77.1 percent of the times after 1000 games.
+Starting with these thetas, we beat the DirectionalStartDeterministicAccusation 94.5 percent of the times after 1000 games.
 '''
