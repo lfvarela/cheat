@@ -1,7 +1,7 @@
 import util
 
 class PlayerState:
-  def __init__(self, currentCards, putDownCards, lastClaim, numOpponentCards, opponentClaims):
+  def __init__(self, currentCards, putDownCards, lastClaim, numOpponentCards, opponentClaims, myClaims=[], numOpponentBluffs=0, numOpponentNonBluffs=0):
     if lastClaim is None:
         self.radialVector = currentCards
     else:
@@ -11,6 +11,9 @@ class PlayerState:
     self.numOpponentCards = numOpponentCards
     self.currentCards = currentCards
     self.opponentClaims = opponentClaims
+    self.myClaims = myClaims
+    self.numOpponentBluffs = numOpponentBluffs
+    self.numOpponentNonBluffs = numOpponentNonBluffs
 
   def featurize(self):
     result = []

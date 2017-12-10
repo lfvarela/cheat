@@ -11,6 +11,9 @@ class GameState():
     self.lastClaim = None
     self.playerPutDownCards = util.initEmptyDecks()
     self.playerClaims = util.initEmptyDecks()
+    self.numBluffs = [10,10]
+    self.numNonBluffs = [20,20] # Start with weak prior that player calls bluff 1/3 of the times.
+    self.numTurns = 1
 
   def getWinner(self):
     #if sum(self.playerCards[1]) == 0:
@@ -25,7 +28,7 @@ class GameState():
     return self.currentPlayer
 
   def getCurrentPlayerState(self):
-    return PlayerState(self.playerCards[self.currentPlayer], self.playerPutDownCards[self.currentPlayer], self.lastClaim, len(self.playerCards[self.getCurrentOpponent()]), self.playerClaims[self.getCurrentOpponent()])
+    return PlayerState(self.playerCards[self.currentPlayer], self.playerPutDownCards[self.currentPlayer], self.lastClaim, len(self.playerCards[self.getCurrentOpponent()]), self.playerClaims[self.getCurrentOpponent()], myClaims=self.playerClaims[self.getCurrentPlayer()], numOpponentBluffs=self.numBluffs[self.getCurrentOpponent()], numOpponentNonBluffs=self.numNonBluffs[self.getCurrentOpponent()]) #TODO: make myClaims cleaner
 
   def getLastClaim(self):
     return self.lastClaim
@@ -52,6 +55,14 @@ class GameState():
     self.currentPlayer = nextPlayer
     self.playerClaims = util.initEmptyDecks()
 
+  def incrBluff(self, player):
+    self.numBluffs[player] += 1
+
+  def incrNonBluff(self, player):
+    self.numNonBluffs[player] += 1
+
+  def incrTurn(self):
+    self.numTurns += 1
 
   #Update deck
   #Update player's cards

@@ -118,6 +118,14 @@ def addLists(lists):
             res[i] += x
     return res
 
+
+def getBeliefOfOpponentCards(opponentClaims, currentCards, putDownCards):
+    deck = [4]*13
+    substractStacks(deck, opponentClaims)
+    substractStacks(deck, currentCards)
+    substractStacks(deck, putDownCards)
+    return deck
+
 def currentPlayerBluffed(claim, handPlayed):
     standardizedClaim = [claim[1] if claim[0] == i else 0 for i in range(13)]
     return standardizedClaim != handPlayed

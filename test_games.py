@@ -85,22 +85,28 @@ def train_lr(train_filename):
     return theta
 
 
-def test_lr(theta, opponent):
+def test():
     num_games = 1000
     num_wins = 0.0
     i = 1
+    theta = [0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149]
     while i < num_games:
-        game = Game(agents.Protagonist(theta=theta), opponent)
+        print theta
+        game = Game(agents.LRwithOpponentBelief(theta=theta), agents.SheddingContender(), verbose=False)
         winner = game.run()
+        # Way 1: Train on the go, just with player 0 states.
+        #theta = game.players[0].endGame(winner == 0)
+
+        # Way 2: Train on the go, but with states from both players, this strategy could be considered as cheating, but not really.
+        util.logistic_regression(theta, game.players[1].getFinalStates(), 1 if winner == 1 else 0)
         if winner == 0.5:
             print 'draw'
-            print i
             continue # Draw
         if winner == 0:
             num_wins += 1
+        print 'current win percentage: ' + str(num_wins/i) + ' after ' + str(i) + ' games'
+        print
         i += 1
-        print i
-        print 'current win percentage: ' + str(num_wins/i)
     print 'final  win percentage: ' + str(num_wins/float(num_games))
 
 
@@ -123,10 +129,12 @@ if __name__=='__main__':
   #theta = train_lr('./shedding_train.pkl')
   #theta = [-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377]
   #test_lr(theta, agents.SheddingContender())
-  #test_lr([-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377], agents.DirectionalStartDeterministicAccusation())
-  theta = [-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377]
-  gather_train('./lr_train1.pkl', agents.Protagonist(theta=theta), agents.Protagonist(theta=theta))
-
+  #test_lr([-0.008345024047517554, -0.214688544984946, -0.025246242876616663, 0.05884756884750228, -0.09937547969164752, -0.2077026389939764, -0.135829971115135, -0.08528639438946946, 0.09464890225799934, -0.3347369318704811, -0.27089965615829414, -0.04346498290590149, -0.0797976678526618, -0.2866457582138018, 0.24771893676456946, -0.07468938682036437], agents.DumbestContender())
+  #theta = [-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377]
+  #gather_train('./lr_train1.pkl', agents.Protagonist(theta=theta), agents.Protagonist(theta=theta))
+  #train_lr('./lr_train1.pkl')
+  test()
+  #test(agents.DirectionalStartDeterministicAccusation(), agents.DirectionalStartDeterministicAccusation())
 '''
 History: (after poster session)
 All training sets are based off of 5000 games, and 20 data points from each, so 200000 data points total.
@@ -152,14 +160,26 @@ Using this same thetas, we they LR and SheddingContenderWithDeterministicBluffAc
 '''
 Now, we gathered shedding_train.pkl (shedding vs shedding). We trained on this data and got the following
 theta = [-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377]
+Using these thetas, we beat the DumbestContender 95 percent of the times after 1000 games.
 Using these thetas, we beat the SheddingContender 78 percent of the times after 1000 games.
 Using these thetas, we beat the SheddingContenderWithDeterministicBluffAccusation 76.1 percent of the times after 1000 games.
 Using these thetas, we beat the DirectionalBluffDeterministicBluffAccusation 75.5 percent of the times after 1000 games.
 Using these thetas, we beat the DirectionalStartDeterministicAccusation 73.7 percent of the times after 1000 games.
 
 Now, we gather 200000 data points from games between our LR protagonist using these thetas. We store this in lr_train1.pkl.
+theta = [-0.008345024047517554, -0.214688544984946, -0.025246242876616663, 0.05884756884750228, -0.09937547969164752, -0.2077026389939764, -0.135829971115135, -0.08528639438946946, 0.09464890225799934, -0.3347369318704811, -0.27089965615829414, -0.04346498290590149, -0.0797976678526618, -0.2866457582138018, 0.24771893676456946, -0.07468938682036437]
+With these thetas we win 88 percent of the times against DumbestContender, interesting as well. Maybe the states do not tell us much when playing against ourselves.
+Using this same thetas, we they LR and DirectionalStartDeterministicAccusation draw most of the times, interesting!, and when they don't, LR wins about half of the times.
+Conclusion: Our strategy and value function depends a lot on our belief of how the other players plays.
 '''
 
 '''
-
+Now, were buidling a similar protagonist. This one stores our belief of the opponents cards and has a beta for the probabilty of the opponent bluffing.
+This protagonist also updates its thetas after every game played.
+We start with theta = [0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149] for this player
+Starting with these thetas, we beat the DumbestContender 95 percent of the times after 1000 games.
+Starting with these thetas, we beat the SheddingContender 78 percent of the times after 1000 games.
+Starting with these thetas, we beat the SheddingContenderWithDeterministicBluffAccusation 76.1 percent of the times after 1000 games.
+Starting with these thetas, we beat the DirectionalBluffDeterministicBluffAccusation 75.5 percent of the times after 1000 games.
+Starting with these thetas, we beat the DirectionalStartDeterministicAccusation 73.7 percent of the times after 1000 games.
 '''
