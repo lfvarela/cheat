@@ -34,7 +34,7 @@ class Protagonist(Agent):
     self.stateHistory.append(state.featurize())
     if (np.random.rand() < .1 and state.lastClaim is not None) or state.numOpponentCards == 0:
       return "Bluff", None
-    possibleActions = self.getPossibleActions(state.currentCards, state.lastClaim[0])
+    possibleActions = self.getPossibleActions(state.currentCards, state.lastClaim)
     # epsilon-greedy exploration
     explorationProb = 0.2
     if random.random() < explorationProb:
@@ -82,7 +82,7 @@ class Protagonist(Agent):
   '''
   All possible actions, including bluffs, where the user claims to put down 1 card.
   '''
-  def getPossibleActions(self, currentCards, currentRank):
+  def getPossibleActions(self, currentCards, lastClaim):
     possibleActions = []
     for rank, numCards in enumerate(currentCards):
       if numCards > 0:
