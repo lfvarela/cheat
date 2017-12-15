@@ -3,14 +3,21 @@ import os.path
 from game import Game
 import util
 import agents
+import sys
+#import keras
+#from keras.models import Sequential
+#from keras.layers import Dense
+import numpy as np
+#from keras.models import load_model
 
-def test_agents(protagonist, contender):
+def test_agents(protagonist, contender, name1, name2):
+  print("Playing {} against {}".format(name1, name2))
   winners = []
-  for i in range(10000):
-    print(i)
+  for i in range(100):
     game = Game(protagonist, contender)
     winners.append(game.run())
-  print "protagonist won:" + str(float(len(winners) - sum(winners)) / len(winners))
+  print("{} won {} of the games against {}".format(name1, float(len(winners) - sum(winners)) / len(winners), name2))
+  #print "protagonist won:" + str()
 
 '''
 Play num_iter games of DumbestContender against DumbestContender and gather the last states
@@ -84,6 +91,48 @@ def train_lr(train_filename):
     print 'theta = ' + str(theta)
     return theta
 
+def train_neural_network(data_file_name, model_file_name):
+  training_data = util.loadPickle(data_file_name)
+  x, y = util.formatTrainingData(training_data)
+  n = int(len(x)*0.9)
+  x_train = x[:n]
+  y_train = y[:n]
+  x_test = x[n:]
+  y_test = y[n:]
+  model = Sequential()
+  model.add(Dense(len(x_train[0]), activation='sigmoid', input_dim=len(x_train[0])))
+  model.add(Dense(1, activation='sigmoid', input_dim=len(x_train[0])))
+  model.compile(optimizer='adam', loss='binary_crossentropy')
+  model.fit(x_train, y_train, nb_epoch=5)
+  y_pred = 1.0*(np.reshape(model.predict(x_test),(-1)) > 0.5)
+  #print(np.around(y_test))
+  print(y_test)
+  print(y_pred)
+  compare = [y_test[i] == y_pred[i] for i in range(len(y_test))]
+  print("accuracy:")
+  print((np.sum(compare)*1.0)/len(y_test))
+  model.save(model_file_name)
+
+def train_logistic_regression(data_file_name):
+  training_data = util.loadPickle(data_file_name)
+  x, y = util.formatTrainingData(training_data)
+  theta = [0] * len(x[0])
+  n = int(len(x)*0.9)
+  x_train = x[:n]
+  y_train = y[:n]
+  x_test = x[n:]
+  y_test = y[n:]
+  util.logistic_reg_test(theta, x_train, y_train, alpha=0.001)
+  correct = 0
+  for i in range(len(x_test)):
+    print(i)
+    pred = util.h(theta, x_test[i])
+    if y_test[i] == 1.0 and pred > 0.5:
+      correct += 1
+    if y_test[i] == 0.0 and pred <= 0.5:
+      correct += 1
+  print("accuracy:")
+  print((correct*1.0)/len(x_test))
 
 def test():
     num_games = 1000
@@ -133,16 +182,43 @@ def play_one_game(player1, player2, verbose=True):
 #good theta: [0.033518215182340716, -0.3150298815540288, -0.3374114617960079, -0.3398257534568357, -0.31420142340764967, -0.22612517765889042, -0.2517273508130277, -0.22031836693070267, -0.28037482834398614, -0.31195773031254753, -0.32635884676914323, -0.32884665971360894, -0.28319598960749615, -0.33570416012292226, 0.4377559655758766]
 
 if __name__=='__main__':
-  #train_test_round_for_lr('./dumb_train_4.pkl', agents.DumbestContender())
-  #theta = train_lr('./shedding_train.pkl')
-  #theta = [-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377]
-  #test_lr(theta, agents.SheddingContender())
-  #test_lr([-0.008345024047517554, -0.214688544984946, -0.025246242876616663, 0.05884756884750228, -0.09937547969164752, -0.2077026389939764, -0.135829971115135, -0.08528639438946946, 0.09464890225799934, -0.3347369318704811, -0.27089965615829414, -0.04346498290590149, -0.0797976678526618, -0.2866457582138018, 0.24771893676456946, -0.07468938682036437], agents.DumbestContender())
-  #theta = [-0.019594482459902463, -0.12201879994940613, -0.13181200639505908, -0.16198099140073657, -0.13261209778286293, -0.1117454130939553, -0.11828411709453032, -0.058170875752038755, -0.11217743355011119, -0.12511182597862475, -0.10318958384146198, -0.13972399216905215, -0.1589608398833307, -0.10556594801791527, 0.10706923408959328, 0.13438029095776377]
-  #gather_train('./lr_train1.pkl', agents.Protagonist(theta=theta), agents.Protagonist(theta=theta))
-  #train_lr('./lr_train1.pkl')
-  test()
-  #test(agents.DirectionalStartDeterministicAccusation(), agents.DirectionalStartDeterministicAccusation())
+  #print(len(sys.argv))
+  firstAgent = str(sys.argv[1])
+  secondAgent = str(sys.argv[2])
+  protagonist = None
+  contender = None
+
+  if firstAgent == "b1":
+    protagonist = agents.LRwithOpponentBelief(theta=[0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149])
+  elif firstAgent == "m1":
+    protagonist = agents.Protagonist(theta=[0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149])
+  elif firstAgent == "rb1":
+    protagonist = agents.DumbestContender()
+  elif firstAgent == "rb2":
+    protagonist = agents.SheddingContender()
+  elif firstAgent == "rb3":
+    protagonist = agents.SheddingContenderWithDeterministicBluffAccusation()
+  elif firstAgent == "rb4":
+    protagonist = agents.DirectionalBluffDeterministicBluffAccusation()
+  else:
+    protagonist = agents.DirectionalStartDeterministicAccusation()
+
+  if secondAgent == "b1":
+    contender = agents.LRwithOpponentBelief(theta=[0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149])
+  elif secondAgent == "m1":
+    contender = agents.Protagonist(theta=[0.030033763665895923, -0.043504765531045785, -0.06373092835048186, -0.05467377661574285, -0.06521888611984926, -0.02142537397035946, -0.01905773113037618, -0.012179246903426437, -0.02319801327482905, -0.04140204704432215, -0.08858694997282894, -0.10350391538747583, -0.11151395185339537, -0.07022559696044653, 0.49029695442445576, -0.2916971059498149])
+  elif secondAgent == "rb1":
+    contender = agents.DumbestContender()
+  elif secondAgent == "rb2":
+    contender = agents.SheddingContender()
+  elif secondAgent == "rb3":
+    contender = agents.SheddingContenderWithDeterministicBluffAccusation()
+  elif secondAgent == "rb4":
+    contender = agents.DirectionalBluffDeterministicBluffAccusation()
+  else:
+    contender = agents.DirectionalStartDeterministicAccusation()
+
+  test_agents(protagonist, contender, firstAgent, secondAgent)
 '''
 History: (after poster session)
 All training sets are based off of 5000 games, and 20 data points from each, so 200000 data points total.

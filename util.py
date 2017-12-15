@@ -84,11 +84,19 @@ def logistic_regression_on_data(theta, train_data, alpha=0.001):
     for j in range(len(theta)):
       theta[j] += alpha*(y - h(theta, x))*x[j]
 
+def logistic_reg_test(theta, x, y, alpha=0.001):
+  for i in range(len(x)):
+    print(i)
+    for j in range(len(theta)):
+      theta[j] += alpha*(y[i] - h(theta, x[i]))*x[i][j]
+
 
 def h(theta, features):
   prod = sum([theta[i]*features[i] for i in range(len(theta))])
   return sigmoid(prod)
 
+def neuralNetworkPredict(model, features):
+  return model.predict(np.reshape(features, (-1, len(features)))) > 0.5
 
 def sigmoid(z):
   return 1.0/float(1 + math.exp(-z))
@@ -140,7 +148,14 @@ def loadPickle(filename):
     with open(filename, 'rb') as f:
         theta = pickle.load(f)
         return theta
-
+#[([x1, x2, ...,xn], 0), ]
+def formatTrainingData(training_data):
+  x = np.zeros((len(training_data), len(training_data[0][0])))
+  y = np.zeros(len(training_data))
+  for i in range(len(training_data)):
+    x[i] = training_data[i][0]
+    y[i] = training_data[i][1]
+  return x, y
 '''
 currentCards = [1, 3, 2, 4, 0, 0, 4, 2, 1, 1, 0, 2, 2]
 cardsPutDown = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
